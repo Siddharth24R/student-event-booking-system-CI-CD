@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NTU Student Event Booking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; }
+
+        /* ── Navbar ── */
+        .navbar { background: linear-gradient(135deg, #002147 0%, #0055b3 100%); box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+
+        /* ── Cards ── */
+        .card {
+            border: none; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.07);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+
+        /* Coloured left border by source */
+        .card-local        { border-left: 4px solid #0d6efd; }
+        .card-skiddle      { border-left: 4px solid #6f42c1; }
+        .card-ticketmaster { border-left: 4px solid #026cdf; }
+
+        /* ── Badges ── */
+        .badge-source-local        { background-color: #0d6efd; }
+        .badge-source-skiddle      { background-color: #6f42c1; }
+        .badge-source-ticketmaster { background-color: #026cdf; }
+
+        /* Event type pill */
+        .type-sport   { background-color: #198754 !important; }
+        .type-concert { background-color: #d63384 !important; }
+        .type-gaming  { background-color: #6610f2 !important; }
+        .type-study   { background-color: #0dcaf0 !important; color: #000 !important; }
+        .type-social  { background-color: #fd7e14 !important; }
+        .type-other   { background-color: #6c757d !important; }
+
+        /* ── Stars ── */
+        .star-rating { color: #ffc107; letter-spacing: 2px; }
+
+        /* ── Spots ── */
+        .spots-full { color: #dc3545; font-weight: 600; }
+        .spots-ok   { color: #198754; }
+
+        /* ── Layout ── */
+        .section-title { border-left: 4px solid #0055b3; padding-left: .75rem; margin-bottom: 1.5rem; }
+        .event-count   { font-size: .8rem; color: #6c757d; margin-left: .5rem; }
+        #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; }
+        .card-title    { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+        .meta-row      { font-size: .82rem; color: #555; margin-bottom: .25rem; }
+        .cost-pill     { font-size: .82rem; font-weight: 600; padding: .2rem .6rem; border-radius: 20px; }
+        .cost-free     { background: #d1f0de; color: #146c3a; }
+        .cost-paid     { background: #fff3cd; color: #664d03; }
+        .cost-unknown  { background: #e2e3e5; color: #41464b; }
+        .divider       { border-top: 1px solid #f0f0f0; margin: .6rem 0; }
+
+        /* ── Login / Register page (light theme — matches app) ── */
+        #login-page, #register-page {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: #f0f2f5; z-index: 1050; overflow-y: auto; padding: 1rem;
+        }
+        .login-card {
+            width: 100%; max-width: 440px;
+            background: #fff; border: none; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,33,71,.13);
+            overflow: hidden;
+        }
+        .login-card-header {
+            background: linear-gradient(135deg, #002147 0%, #0055b3 100%);
+            padding: 2rem 2rem 1.6rem;
+            text-align: center;
+        }
+        .login-card-header .login-icon {
+            font-size: 2.4rem; color: #fff; margin-bottom: .5rem; display: block;
+        }
+        .login-card-header h2 {
+            color: #fff; font-weight: 700; margin: 0; font-size: 1.5rem;
+        }
+        .login-card-header p {
+            color: rgba(255,255,255,.75); margin: .3rem 0 0; font-size: .9rem;
+        }
+        .login-card-body { padding: 1.8rem 2rem 2rem; }
+
+        /* Toggle — Student (filled blue) / Admin (outline) */
+        .login-toggle-wrap { display: flex; gap: .6rem; margin-bottom: 1.5rem; }
+        .login-toggle-wrap .ltgl {
+            flex: 1; border-radius: 8px; padding: .55rem .5rem;
+            font-weight: 600; font-size: .9rem; transition: all .2s; cursor: pointer;
+        }
+        .ltgl-student        { background: #0d6efd; color: #fff; border: 2px solid #0d6efd; }
+        .ltgl-student:hover  { background: #0b5ed7; border-color: #0b5ed7; }
+        .ltgl-student.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+        .ltgl-student:not(.active) { background: transparent; color: #0d6efd; border: 2px solid #dee2e6; }
+        .ltgl-admin          { background: transparent; color: #6c757d; border: 2px solid #dee2e6; }
+        .ltgl-admin:hover    { border-color: #0055b3; color: #0055b3; }
+        .ltgl-admin.active   { background: #0055b3; color: #fff; border-color: #0055b3; }
+
+        /* Labels and inputs */
+        .login-label { color: #495057; font-size: .82rem; font-weight: 600; display: block; margin-bottom: .35rem; }
+        .login-input {
+            background: #f8f9fa !important; border: 1.5px solid #dee2e6 !important;
+            color: #212529 !important; border-radius: 8px !important; padding: .65rem 1rem !important;
+            font-size: .95rem !important;
+        }
+        .login-input::placeholder { color: #adb5bd !important; }
+        .login-input:focus { border-color: #0d6efd !important; box-shadow: 0 0 0 3px rgba(13,110,253,.12) !important; background: #fff !important; }
+
+        /* Buttons */
+        .btn-login-student {
+            background: linear-gradient(135deg, #0055b3 0%, #0d6efd 100%);
+            color: #fff; border: none; border-radius: 8px; padding: .75rem;
+            font-weight: 700; width: 100%; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(13,110,253,.25); transition: opacity .15s;
+        }
+        .btn-login-student:hover { opacity: .9; }
+        .btn-login-admin {
+            background: linear-gradient(135deg, #002147 0%, #0055b3 100%);
+            color: #fff; border: none; border-radius: 8px; padding: .75rem;
+            font-weight: 700; width: 100%; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,33,71,.2); transition: opacity .15s;
+        }
+        .btn-login-admin:hover { opacity: .9; }
+
+        /* Footer / links */
+        .login-footer-text { color: #6c757d; font-size: .88rem; text-align: center; }
+        .login-footer-text a { color: #0d6efd; text-decoration: none; font-weight: 600; }
+        .login-footer-text a:hover { text-decoration: underline; }
+        .login-divider { border: none; border-top: 1px solid #f0f2f5; margin: 1.1rem 0; }
+        .login-back-btn {
+            background: #f8f9fa; color: #6c757d; border: 1.5px solid #dee2e6;
+            border-radius: 8px; padding: .65rem; width: 100%; cursor: pointer; font-weight: 500;
+            transition: all .15s;
+        }
+        .login-back-btn:hover { background: #e9ecef; color: #495057; }
+        .pw-wrap { position: relative; }
+        .pw-wrap .login-input { padding-right: 2.6rem; }
+        .pw-eye {
+            position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; color: #adb5bd;
+            padding: 0; font-size: 1rem; line-height: 1;
+        }
+        .pw-eye:hover { color: #495057; }
+
+        /* ── My Events sub-tabs ── */
+        .my-events-pills { border-bottom: 2px solid #dee2e6; margin-bottom: 1.25rem; }
+        .my-events-pills .nav-link {
+            color: #6c757d; border: none; border-bottom: 2px solid transparent;
+            margin-bottom: -2px; padding: .55rem 1.1rem; font-weight: 600; font-size: .92rem;
+            border-radius: 0; background: transparent; cursor: pointer;
+        }
+        .my-events-pills .nav-link.active { color: #0055b3; border-bottom-color: #0055b3; }
+        .my-events-pills .nav-link:hover:not(.active) { color: #0055b3; background: transparent; }
+        .my-events-pills .pill-count {
+            font-size: .72rem; background: #e9ecef; color: #6c757d;
+            border-radius: 20px; padding: .1rem .45rem; margin-left: .35rem; font-weight: 700;
+        }
+        .my-events-pills .nav-link.active .pill-count { background: #cfe2ff; color: #0055b3; }
+
+        /* Past event cards — slightly muted */
+        .card-past { opacity: .82; }
+        .card-past .card-title { color: #555; }
+        .card-past .meta-row   { color: #888; }
+        .user-rating-display { font-size: .95rem; color: #e6a817; letter-spacing: 1px; }
+
+
+        /* ── Admin analytics ── */
+        .stat-card { border-radius: 12px; color: #fff; text-align: center; padding: 1.2rem; }
+        .stat-card .stat-num { font-size: 2rem; font-weight: 700; }
+        .stat-card .stat-lbl { font-size: .82rem; opacity: .85; }
+    </style>
+</head>
+<body>
+
+<!-- ===== Navbar ===== -->
+<nav class="navbar navbar-dark mb-4">
+    <div class="container">
+        <span class="navbar-brand fw-bold fs-4">
+            <i class="bi bi-calendar-event me-2"></i>NTU Student Events
+        </span>
+        <div id="nav-user" class="d-none text-white d-flex align-items-center gap-3">
+            <span class="small" id="nav-user-name"></span>
+            <span class="badge bg-warning text-dark" id="nav-role-badge"></span>
+            <button class="btn btn-sm btn-outline-light" onclick="logout()">
+                <i class="bi bi-box-arrow-right me-1"></i>Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- ===================================================================== -->
+<!-- LOGIN PAGE                                                             -->
+<!-- ===================================================================== -->
+<div id="login-page">
+    <div class="login-card">
+
+        <!-- Gradient header -->
+        <div class="login-card-header">
+            <i class="bi bi-mortarboard-fill login-icon"></i>
+            <h2>NTU Student Events</h2>
+            <p>Sign in to browse, book, and manage events</p>
+        </div>
+
+        <div class="login-card-body">
+
+            <!-- Student / Admin toggle -->
+            <div class="login-toggle-wrap">
+                <button type="button" class="ltgl ltgl-student active" id="ltgl-student" onclick="switchLoginTab('student')">
+                    <i class="bi bi-person-fill me-1"></i>Student
+                </button>
+                <button type="button" class="ltgl ltgl-admin" id="ltgl-admin" onclick="switchLoginTab('admin')">
+                    <i class="bi bi-shield-fill me-1"></i>Admin
+                </button>
+            </div>
+
+            <!-- Student Login -->
+            <div id="login-student-section">
+                <form onsubmit="submitLogin(event,'student')">
+                    <div class="mb-3">
+                        <label class="login-label">NTU Email</label>
+                        <input type="email" id="login-email" class="form-control login-input" placeholder="you@ntu.ac.uk" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="login-label">Password</label>
+                        <div class="pw-wrap">
+                            <input type="password" id="login-password" class="form-control login-input" placeholder="••••••••" required>
+                            <button type="button" class="pw-eye" onclick="togglePw('login-password',this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login-student mb-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </button>
+                </form>
+                <hr class="login-divider">
+                <div class="login-footer-text">
+                    Don't have an account?
+                    <a href="#" onclick="showRegisterForm();return false;">Create Student Account</a>
+                </div>
+            </div>
+
+            <!-- Admin Login -->
+            <div id="login-admin-section" style="display:none">
+                <form onsubmit="submitLogin(event,'admin')">
+                    <div class="mb-3">
+                        <label class="login-label">Admin Email</label>
+                        <input type="email" id="admin-email" class="form-control login-input" placeholder="admin@ntu.ac.uk" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="login-label">Password</label>
+                        <div class="pw-wrap">
+                            <input type="password" id="admin-password" class="form-control login-input" placeholder="••••••••" required>
+                            <button type="button" class="pw-eye" onclick="togglePw('admin-password',this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="login-label">Admin Access Code</label>
+                        <input type="text" id="admin-code" class="form-control login-input" placeholder="Provided by system admin" required>
+                    </div>
+                    <button type="submit" class="btn-login-admin">
+                        <i class="bi bi-shield-lock me-2"></i>Sign In as Admin
+                    </button>
+                </form>
+            </div>
+
+        </div><!-- /login-card-body -->
+    </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- REGISTER FORM (replaces login card)                                   -->
+<!-- ===================================================================== -->
+<div id="register-page" class="d-none">
+    <div class="login-card">
+
+        <!-- Gradient header -->
+        <div class="login-card-header">
+            <i class="bi bi-person-plus-fill login-icon"></i>
+            <h2>Create Account</h2>
+            <p>Register to join events and submit ratings</p>
+        </div>
+
+        <div class="login-card-body">
+            <form onsubmit="submitRegisterAccount(event)">
+                <div class="mb-3">
+                    <label class="login-label">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" id="reg-name" class="form-control login-input" placeholder="e.g. Sidd Patel" required>
+                </div>
+                <div class="mb-3">
+                    <label class="login-label">NTU Email <span class="text-danger">*</span></label>
+                    <input type="email" id="reg-email" class="form-control login-input" placeholder="N0123456@ntu.ac.uk" required>
+                </div>
+                <div class="mb-3">
+                    <label class="login-label">Student ID <span class="text-danger">*</span></label>
+                    <input type="text" id="reg-studentid" class="form-control login-input" placeholder="N0123456" required>
+                </div>
+                <div class="mb-4">
+                    <label class="login-label">Password <span class="text-danger">*</span>
+                        <span style="color:#adb5bd;font-size:.75rem;text-transform:none;letter-spacing:0;font-weight:400"> (min 6 chars)</span>
+                    </label>
+                    <div class="pw-wrap">
+                        <input type="password" id="reg-password" class="form-control login-input" placeholder="••••••••" required minlength="6">
+                        <button type="button" class="pw-eye" onclick="togglePw('reg-password',this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login-student mb-3">
+                    <i class="bi bi-person-plus me-2"></i>Create Student Account
+                </button>
+                <button type="button" class="login-back-btn" onclick="showLoginPage()">
+                    ← Back to Login
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- MAIN APP (shown after login)                                           -->
+<!-- ===================================================================== -->
+<div id="app-page" class="container pb-5 d-none">
+
+    <!-- Tab navigation — Admin Panel tab only shows for admins -->
+    <ul class="nav nav-tabs mb-4" id="mainTabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#tab-browse">
+                <i class="bi bi-search me-1"></i>Browse Events
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-add">
+                <i class="bi bi-plus-circle me-1"></i>Add Event
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-my-events">
+                <i class="bi bi-calendar3 me-1"></i>My Events
+            </a>
+        </li>
+        <li class="nav-item d-none" id="tab-admin-li">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-admin" onclick="loadAdminPanel()">
+                <i class="bi bi-shield-lock me-1"></i>Admin Panel
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ============================================================ -->
+        <!-- TAB 1: Browse Events                                          -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade show active" id="tab-browse">
+            <h4 class="section-title">Browse &amp; Search Events <span id="event-count" class="event-count"></span></h4>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Type</label>
+                            <select id="filter-type" class="form-select form-select-sm">
+                                <option value="">All types</option>
+                                <option value="sport">Sport</option>
+                                <option value="concert">Concert</option>
+                                <option value="study">Study</option>
+                                <option value="gaming">Gaming</option>
+                                <option value="social">Social</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Venue (contains)</label>
+                            <input type="text" id="filter-venue" class="form-control form-control-sm" placeholder="e.g. Nottingham">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Date</label>
+                            <input type="date" id="filter-date" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm flex-fill" onclick="loadEvents()">
+                                <i class="bi bi-search me-1"></i>Search
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="events-grid" class="row g-3">
+                <div class="col-12 text-center text-muted py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2">Loading events…</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 2: Add Event  (form left + My Posted Events right)       -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="tab-add">
+            <div class="row g-4">
+
+                <!-- ── Left: Post / Edit form ── -->
+                <div class="col-lg-5">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+                            <span id="add-form-heading"><i class="bi bi-plus-circle me-2"></i>Post a New Event</span>
+                            <button id="add-form-cancel-btn" class="btn btn-sm btn-outline-secondary d-none" onclick="cancelEditForm()">
+                                <i class="bi bi-x me-1"></i>Cancel
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <input type="hidden" id="ev-editing-id">
+                            <form id="add-event-form" onsubmit="submitAddEvent(event)">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Event Title <span class="text-danger">*</span></label>
+                                    <input type="text" id="ev-title" class="form-control" placeholder="e.g. Gaming Night" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+                                    <select id="ev-type" class="form-select" required>
+                                        <option value="">Select…</option>
+                                        <option value="social">Social</option>
+                                        <option value="study">Academic</option>
+                                        <option value="sport">Sports</option>
+                                        <option value="concert">Cultural</option>
+                                        <option value="gaming">Gaming</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-7">
+                                        <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+                                        <input type="date" id="ev-date" class="form-control" required>
+                                    </div>
+                                    <div class="col-5">
+                                        <label class="form-label fw-semibold">Time <span class="text-danger">*</span></label>
+                                        <input type="time" id="ev-time" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">Cost (£)</label>
+                                        <input type="number" id="ev-cost" class="form-control" value="0" min="0" step="0.01">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold">Max Participants <span class="text-danger">*</span></label>
+                                        <input type="number" id="ev-max" class="form-control" value="20" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Venue <span class="text-danger">*</span></label>
+                                    <input type="text" id="ev-venue" class="form-control" placeholder="e.g. NTU Clifton Campus" required>
+                                </div>
+                                <div class="row g-2 mb-4">
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold text-muted">Latitude <small>(optional)</small></label>
+                                        <input type="number" id="ev-lat" class="form-control" placeholder="52.9548" step="any">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label fw-semibold text-muted">Longitude <small>(optional)</small></label>
+                                        <input type="number" id="ev-lng" class="form-control" placeholder="-1.1581" step="any">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100" id="add-form-submit-btn">
+                                    <i class="bi bi-cloud-upload me-1"></i>Post Event
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Right: My Posted Events ── -->
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="section-title mb-0">My Posted Events</h5>
+                    </div>
+                    <div id="my-posted-grid">
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-calendar-plus fs-2 d-block mb-2"></i>
+                            <p class="small">Events you post will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 3: My Events — Upcoming / Past sub-tabs                  -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="tab-my-events">
+            <h4 class="section-title">My Registered Events</h4>
+
+            <!-- Sub-tab pill nav -->
+            <ul class="nav my-events-pills">
+                <li class="nav-item">
+                    <button class="nav-link active" id="pill-upcoming" onclick="switchMyEventsPill('upcoming')">
+                        <i class="bi bi-calendar-event me-1"></i>Upcoming
+                        <span class="pill-count" id="pill-upcoming-count">0</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="pill-past" onclick="switchMyEventsPill('past')">
+                        <i class="bi bi-clock-history me-1"></i>Past
+                        <span class="pill-count" id="pill-past-count">0</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Upcoming pane -->
+            <div id="pane-upcoming" class="row g-3">
+                <div class="col-12 text-muted text-center py-4">
+                    <i class="bi bi-calendar-check fs-3 d-block mb-2"></i>
+                    Switch to this tab to load your events.
+                </div>
+            </div>
+
+            <!-- Past pane (hidden by default) -->
+            <div id="pane-past" class="row g-3 d-none"></div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 4: Admin Panel                                            -->
+        <!-- ============================================================ -->
+        <div class="tab-pane fade" id="tab-admin">
+            <h4 class="section-title">Admin Panel</h4>
+
+            <!-- Analytics cards -->
+            <div class="row g-3 mb-4" id="analytics-cards">
+                <div class="col-12 text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+
+            <!-- Actions row -->
+            <div class="d-flex gap-2 mb-4">
+                <button class="btn btn-outline-primary btn-sm" onclick="loadAdminStudents()">
+                    <i class="bi bi-people me-1"></i>Refresh Students
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="adminSync()">
+                    <i class="bi bi-arrow-repeat me-1"></i>Force Sync External Events
+                </button>
+            </div>
+
+            <!-- Students table -->
+            <h6 class="fw-semibold mb-2"><i class="bi bi-people me-2"></i>Registered Students</h6>
+            <div class="card mb-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-students-tbody">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div><!-- /tab-content -->
+</div><!-- /app-page -->
+
+<!-- ===================================================================== -->
+<!-- MODALS                                                                 -->
+<!-- ===================================================================== -->
+
+<!-- Register for Event Modal -->
+<div class="modal fade" id="registerModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-check me-2"></i>Register for Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small fw-semibold" id="register-event-title"></p>
+                <p class="text-muted small">Registering as: <strong id="register-as-name"></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary w-100" onclick="submitRegister()">
+                    <i class="bi bi-check2 me-1"></i>Confirm Registration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rate Event Modal -->
+<div class="modal fade" id="rateModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-star me-2"></i>Rate Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small fw-semibold" id="rate-event-title"></p>
+                <label class="form-label">Rating</label>
+                <div class="d-flex gap-2 justify-content-center fs-3">
+                    <span class="star-btn" data-val="1" onclick="selectStar(1)" style="cursor:pointer">☆</span>
+                    <span class="star-btn" data-val="2" onclick="selectStar(2)" style="cursor:pointer">☆</span>
+                    <span class="star-btn" data-val="3" onclick="selectStar(3)" style="cursor:pointer">☆</span>
+                    <span class="star-btn" data-val="4" onclick="selectStar(4)" style="cursor:pointer">☆</span>
+                    <span class="star-btn" data-val="5" onclick="selectStar(5)" style="cursor:pointer">☆</span>
+                </div>
+                <input type="hidden" id="rate-stars" value="0">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-warning w-100 text-white" onclick="submitRate()">
+                    <i class="bi bi-star-fill me-1"></i>Submit Rating
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-event-id">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">Title</label>
+                        <input type="text" id="edit-title" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Type</label>
+                        <select id="edit-type" class="form-select form-select-sm">
+                            <option value="sport">Sport</option>
+                            <option value="concert">Concert</option>
+                            <option value="study">Study</option>
+                            <option value="gaming">Gaming</option>
+                            <option value="social">Social</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Date</label>
+                        <input type="date" id="edit-date" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Cost (£)</label>
+                        <input type="number" id="edit-cost" class="form-control form-control-sm" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Max Participants</label>
+                        <input type="number" id="edit-max" class="form-control form-control-sm" min="1">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Venue</label>
+                        <input type="text" id="edit-venue" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="submitEditEvent()">
+                    <i class="bi bi-save me-1"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Firebase Web SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getAnalytics }  from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+        apiKey:            "AIzaSyBFCQqEwzk-T9g7gSgHU7nAa0691hjQr_8",
+        authDomain:        "student-event-booking-system.firebaseapp.com",
+        projectId:         "student-event-booking-system",
+        storageBucket:     "student-event-booking-system.firebasestorage.app",
+        messagingSenderId: "931976838543",
+        appId:             "1:931976838543:web:efcfc3936262072d715ffa",
+        measurementId:     "G-F4C71H4771"
+    };
+
+    const app       = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    // Expose to non-module scripts
+    window.firebaseApp       = app;
+    window.firebaseAnalytics = analytics;
+</script>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+const API = '/api';
+
+let authToken    = null;
+let currentUser  = null;   // { studentId, name, email, role }
+let currentEventId = null;
+
+// =====================================================================
+// Auth helpers
+// =====================================================================
+function authHeaders() {
+    return authToken
+        ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }
+        : { 'Content-Type': 'application/json' };
+}
+
+// =====================================================================
+// Page visibility
+// =====================================================================
+function showLoginPage() {
+    document.getElementById('login-page').classList.remove('d-none');
+    document.getElementById('register-page').classList.add('d-none');
+    document.getElementById('app-page').classList.add('d-none');
+    document.getElementById('nav-user').classList.add('d-none');
+}
+
+function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        inp.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+    }
+}
+
+function showRegisterForm() {
+    document.getElementById('login-page').classList.add('d-none');
+    document.getElementById('register-page').classList.remove('d-none');
+    document.getElementById('app-page').classList.add('d-none');
+}
+
+function switchLoginTab(tab) {
+    document.getElementById('ltgl-student').classList.toggle('active', tab === 'student');
+    document.getElementById('ltgl-admin').classList.toggle('active', tab === 'admin');
+    document.getElementById('login-student-section').style.display = tab === 'student' ? '' : 'none';
+    document.getElementById('login-admin-section').style.display   = tab === 'admin'   ? '' : 'none';
+}
+
+function showApp() {
+    document.getElementById('login-page').classList.add('d-none');
+    document.getElementById('register-page').classList.add('d-none');
+    document.getElementById('app-page').classList.remove('d-none');
+    document.getElementById('nav-user').classList.remove('d-none');
+    document.getElementById('nav-user-name').textContent = currentUser.name;
+    document.getElementById('nav-role-badge').textContent = currentUser.role.toUpperCase();
+
+    // Show Admin tab only for admins
+    if (currentUser.role === 'admin') {
+        document.getElementById('tab-admin-li').classList.remove('d-none');
+    } else {
+        document.getElementById('tab-admin-li').classList.add('d-none');
+    }
+
+    loadEvents();
+    loadMyPostedEvents();
+}
+
+// =====================================================================
+// Login — POST /api/auth/login
+// =====================================================================
+async function submitLogin(e, loginType) {
+    e.preventDefault();
+    const email    = document.getElementById(loginType === 'admin' ? 'admin-email'    : 'login-email').value.trim();
+    const password = document.getElementById(loginType === 'admin' ? 'admin-password' : 'login-password').value;
+    const body     = { email, password };
+    if (loginType === 'admin') {
+        body.adminCode = document.getElementById('admin-code').value.trim();
+    }
+
+    try {
+        const res  = await fetch(API + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast('danger', data.error || 'Login failed'); return; }
+
+        authToken   = data.token;
+        currentUser = { studentId: data.studentId, name: data.name, email: data.email, role: data.role };
+        showApp();
+        showToast('success', `Welcome back, ${data.name}!`);
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Register account — POST /api/auth/register
+// =====================================================================
+async function submitRegisterAccount(e) {
+    e.preventDefault();
+    const body = {
+        studentId: document.getElementById('reg-studentid').value.trim(),
+        name:      document.getElementById('reg-name').value.trim(),
+        email:     document.getElementById('reg-email').value.trim(),
+        password:  document.getElementById('reg-password').value
+    };
+    try {
+        const res  = await fetch(API + '/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast('danger', data.error || 'Registration failed'); return; }
+        showToast('success', 'Account created! Please sign in.');
+        showLoginPage();
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Logout — POST /api/auth/logout
+// =====================================================================
+async function logout() {
+    try {
+        await fetch(API + '/auth/logout', { method: 'POST', headers: authHeaders() });
+    } catch (_) {}
+    authToken   = null;
+    currentUser = null;
+    clearMyRatings();
+    showLoginPage();
+    showToast('info', 'You have been logged out.');
+}
+
+// =====================================================================
+// Load events — GET /api/events
+// =====================================================================
+async function loadEvents() {
+    const type  = document.getElementById('filter-type')?.value  || '';
+    const venue = document.getElementById('filter-venue')?.value || '';
+    const date  = document.getElementById('filter-date')?.value  || '';
+
+    let url = API + '/events';
+    const params = new URLSearchParams();
+    if (type)  params.append('type',  type);
+    if (venue) params.append('venue', venue);
+    if (date)  params.append('date',  date);
+    if ([...params].length > 0) url += '?' + params.toString();
+
+    const grid  = document.getElementById('events-grid');
+    const count = document.getElementById('event-count');
+    if (!grid) return;
+    grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Loading events…</p></div>';
+    count.textContent = '';
+
+    try {
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            grid.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary"></i>
+                    <h5>No events found</h5>
+                    <p class="small">Try different filters or add your own event.</p>
+                </div>`;
+            count.textContent = '';
+            return;
+        }
+
+        grid.innerHTML = data.map(e => renderEventCard(e, false)).join('');
+        count.textContent = `(${data.length} event${data.length !== 1 ? 's' : ''})`;
+    } catch (err) {
+        grid.innerHTML = `<div class="col-12"><div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load events: ${err.message}</div></div>`;
+    }
+}
+
+// =====================================================================
+// Tab switch listeners
+// =====================================================================
+document.addEventListener('shown.bs.tab', async function(e) {
+    const href = e.target.getAttribute('href');
+    if (href === '#tab-my-events') await loadMyRegisteredEvents();
+    if (href === '#tab-add')       await loadMyPostedEvents();
+    if (href === '#tab-admin')     await loadAdminPanel();
+});
+
+// =====================================================================
+// My Posted Events — loaded in Add Event tab right column
+// =====================================================================
+async function loadMyPostedEvents() {
+    const grid = document.getElementById('my-posted-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
+    try {
+        const res  = await fetch(API + '/events');
+        const data = await res.json();
+        const mine = Array.isArray(data) ? data.filter(ev => ev.publisherID === currentUser?.studentId) : [];
+        if (!mine.length) {
+            grid.innerHTML = `<div class="text-center text-muted py-5">
+                <i class="bi bi-calendar-plus fs-2 d-block mb-2"></i>
+                <p class="small">You haven't posted any events yet.</p>
+            </div>`;
+            return;
+        }
+        grid.innerHTML = `<div class="row g-3">${mine.map(ev => renderPostedEventCard(ev)).join('')}</div>`;
+    } catch (err) {
+        grid.innerHTML = `<div class="alert alert-danger">Failed to load: ${err.message}</div>`;
+    }
+}
+
+function renderPostedEventCard(ev) {
+    const isFull  = ev.maxParticipants > 0 && ev.currentAttendees >= ev.maxParticipants;
+    const costLbl = ev.cost === 0
+        ? `<span class="cost-pill cost-free"><i class="bi bi-gift me-1"></i>Free</span>`
+        : ev.cost < 0
+            ? `<span class="cost-pill cost-unknown"><i class="bi bi-info-circle me-1"></i>See website</span>`
+            : `<span class="cost-pill cost-paid"><i class="bi bi-tag me-1"></i>£${Number(ev.cost).toFixed(2)}</span>`;
+    const spotsLbl = isFull
+        ? `<span class="spots-full"><i class="bi bi-x-circle me-1"></i>Full</span>`
+        : `<span class="spots-ok"><i class="bi bi-people me-1"></i>${ev.spotsRemaining ?? (ev.maxParticipants - ev.currentAttendees)} left</span>`;
+    const typeClass = `type-${(ev.type || 'other').toLowerCase()}`;
+
+    return `
+    <div class="col-md-6">
+        <div class="card card-local h-100">
+            <div class="card-body p-3 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge ${typeClass} text-capitalize">${ev.type || 'other'}</span>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-outline-secondary btn-sm" title="Edit"
+                            onclick="prefillEditForm('${ev.eventId}', ${JSON.stringify(ev).replace(/"/g,'&quot;')})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" title="Delete"
+                            onclick="deleteEvent('${ev.eventId}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <h6 class="card-title mb-1">${escHtml(ev.title)}</h6>
+                <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(ev.venue)}</p>
+                <div class="d-flex justify-content-between align-items-center meta-row mb-2">
+                    <span><i class="bi bi-calendar3 text-primary me-1"></i>${formatDate(ev.date)}</span>
+                    ${ev.time ? `<span><i class="bi bi-clock text-secondary me-1"></i>${formatTime(ev.time)}</span>` : ''}
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                    ${costLbl}
+                    ${spotsLbl}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// Pre-fill the Add Event form for inline editing
+function prefillEditForm(eventId, evData) {
+    const ev = typeof evData === 'string' ? JSON.parse(evData.replace(/&quot;/g, '"')) : evData;
+    document.getElementById('ev-editing-id').value = eventId;
+    document.getElementById('ev-title').value  = ev.title  || '';
+    document.getElementById('ev-type').value   = ev.type   || '';
+    document.getElementById('ev-date').value   = ev.date   || '';
+    document.getElementById('ev-time').value   = ev.time   || '';
+    document.getElementById('ev-cost').value   = ev.cost   ?? 0;
+    document.getElementById('ev-max').value    = ev.maxParticipants ?? 20;
+    document.getElementById('ev-venue').value  = ev.venue  || '';
+    document.getElementById('ev-lat').value    = ev.latitude  || '';
+    document.getElementById('ev-lng').value    = ev.longitude || '';
+
+    document.getElementById('add-form-heading').innerHTML  = '<i class="bi bi-pencil me-2"></i>Edit Event';
+    document.getElementById('add-form-submit-btn').innerHTML = '<i class="bi bi-save me-1"></i>Update Event';
+    document.getElementById('add-form-submit-btn').className = 'btn btn-primary w-100';
+    document.getElementById('add-form-cancel-btn').classList.remove('d-none');
+
+    // Scroll form into view on mobile
+    document.getElementById('add-event-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEditForm() {
+    document.getElementById('ev-editing-id').value = '';
+    document.getElementById('add-event-form').reset();
+    document.getElementById('add-form-heading').innerHTML  = '<i class="bi bi-plus-circle me-2"></i>Post a New Event';
+    document.getElementById('add-form-submit-btn').innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Post Event';
+    document.getElementById('add-form-submit-btn').className = 'btn btn-success w-100';
+    document.getElementById('add-form-cancel-btn').classList.add('d-none');
+}
+
+// =====================================================================
+// My Events — Upcoming / Past sub-tabs
+// =====================================================================
+
+function isEventPast(dateStr) {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Handle both "YYYY-MM-DD" and full ISO timestamps like "2026-02-24T19:00:00"
+    const normalized = dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00';
+    const eventDate  = new Date(normalized);
+    if (isNaN(eventDate.getTime())) return false; // unparseable → treat as not past
+    return eventDate < today;
+}
+
+// Dummy stubs kept so logout call doesn't break (no longer needed)
+function clearMyRatings() {}
+
+function switchMyEventsPill(pill) {
+    document.getElementById('pill-upcoming').classList.toggle('active', pill === 'upcoming');
+    document.getElementById('pill-past').classList.toggle('active', pill === 'past');
+    document.getElementById('pane-upcoming').classList.toggle('d-none', pill !== 'upcoming');
+    document.getElementById('pane-past').classList.toggle('d-none', pill !== 'past');
+}
+
+async function loadMyRegisteredEvents() {
+    const paneUp   = document.getElementById('pane-upcoming');
+    const panePast = document.getElementById('pane-past');
+    if (!paneUp || !currentUser) return;
+
+    const spinner = '<div class="col-12 text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    paneUp.innerHTML   = spinner;
+    panePast.innerHTML = spinner;
+
+    try {
+        const res  = await fetch(`${API}/students/${currentUser.studentId}/registrations`, {
+            headers: authHeaders()
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const all = await res.json();
+
+        if (!Array.isArray(all)) throw new Error('Unexpected response format');
+
+        // Split logic:
+        // Past     = date is before today  OR  hasRated === true  OR  isCancelled === true
+        // Upcoming = date is today/future  AND  not yet rated  AND  not cancelled
+        const upcoming = all.filter(ev => !isEventPast(ev.date) && !ev.hasRated && !ev.isCancelled);
+        const past     = all.filter(ev =>  isEventPast(ev.date) ||   ev.hasRated ||  ev.isCancelled);
+
+        // Update pill counts
+        document.getElementById('pill-upcoming-count').textContent = upcoming.length;
+        document.getElementById('pill-past-count').textContent     = past.length;
+
+        // Render upcoming
+        if (upcoming.length) {
+            paneUp.innerHTML = `<div class="row g-3">${upcoming.map(ev => renderRegisteredCard(ev, false)).join('')}</div>`;
+        } else {
+            paneUp.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="bi bi-calendar-check fs-3 d-block mb-2"></i>
+                    <p class="mb-1">No upcoming registered events.</p>
+                    <p class="small">Browse events and click <strong>Register</strong> to sign up.</p>
+                </div>`;
+        }
+
+        // Render past
+        if (past.length) {
+            panePast.innerHTML = `<div class="row g-3">${past.map(ev => renderRegisteredCard(ev, true)).join('')}</div>`;
+        } else {
+            panePast.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
+                    <p>No past events yet.</p>
+                </div>`;
+        }
+
+    } catch (err) {
+        paneUp.innerHTML   = `<div class="col-12"><div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load: ${err.message}</div></div>`;
+        panePast.innerHTML = '';
+    }
+}
+
+function renderRegisteredCard(ev, isPast) {
+    const costLbl = ev.cost === 0
+        ? `<span class="cost-pill cost-free"><i class="bi bi-gift me-1"></i>Free</span>`
+        : ev.cost < 0
+            ? `<span class="cost-pill cost-unknown"><i class="bi bi-info-circle me-1"></i>See website</span>`
+            : `<span class="cost-pill cost-paid"><i class="bi bi-tag me-1"></i>£${Number(ev.cost).toFixed(2)}</span>`;
+
+    const avgStars = (ev.averageRating && ev.averageRating > 0)
+        ? `${'★'.repeat(Math.round(ev.averageRating))}${'☆'.repeat(5 - Math.round(ev.averageRating))} <small class="text-muted">${Number(ev.averageRating).toFixed(1)}</small>`
+        : '<small class="text-muted fst-italic">No ratings yet</small>';
+
+    const typeClass   = `type-${(ev.type || 'other').toLowerCase()}`;
+    const borderClass = ev.source === 'ticketmaster' ? 'card-ticketmaster'
+                      : ev.source === 'skiddle'      ? 'card-skiddle' : 'card-local';
+    const cardClass   = borderClass + (isPast ? ' card-past' : '');
+
+
+    // Status badge top-right
+    let statusBadge;
+    if (ev.isCancelled) {
+        statusBadge = `<span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Cancelled</span>`;
+    } else {
+        statusBadge = `<span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Registered</span>`;
+    }
+
+    // Action area (bottom of card)
+    let actionHtml;
+    if (ev.isCancelled) {
+        // Cancelled — show muted label, no button
+        actionHtml = `
+            <div class="mt-auto pt-2 border-top">
+                <p class="text-muted small mb-0 fst-italic"><i class="bi bi-x-circle me-1"></i>You cancelled this registration</p>
+            </div>`;
+    } else if (ev.hasRated && ev.userRating > 0) {
+        // Rated — show filled stars + score
+        const filled = '★'.repeat(ev.userRating);
+        const empty  = '☆'.repeat(5 - ev.userRating);
+        actionHtml = `
+            <div class="mt-auto pt-2 border-top">
+                <div class="d-flex align-items-center gap-2 mt-2">
+                    <span class="user-rating-display">${filled}${empty}</span>
+                    <span class="text-muted small fw-semibold">Your rating: ${ev.userRating}.0</span>
+                </div>
+            </div>`;
+    } else if (isPast) {
+        // Date-past, unrated, not cancelled — offer rating
+        actionHtml = `
+            <div class="mt-auto pt-2">
+                <button class="btn btn-outline-warning btn-sm w-100"
+                    onclick="openRateModal('${ev.eventId}', '${escHtml(ev.title)}', true)">
+                    <i class="bi bi-star me-1"></i>Leave a Rating
+                </button>
+            </div>`;
+    } else {
+        // Upcoming — Rate (yellow) + Cancel Registration (red outline) side by side
+        actionHtml = `
+            <div class="mt-auto pt-2">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-warning btn-sm flex-fill text-white"
+                        onclick="openRateModal('${ev.eventId}', '${escHtml(ev.title)}', false)">
+                        <i class="bi bi-star me-1"></i>Rate
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm flex-fill"
+                        onclick="cancelRegistration('${ev.eventId}', '${escHtml(ev.title)}')">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    return `
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 ${cardClass}">
+            <div class="card-body d-flex flex-column p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge ${typeClass} text-capitalize">${ev.type || 'other'}</span>
+                    ${statusBadge}
+                </div>
+                <h5 class="card-title mb-2">${escHtml(ev.title)}</h5>
+                <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(ev.venue)}</p>
+                <div class="d-flex justify-content-between align-items-center meta-row mb-2">
+                    <span><i class="bi bi-calendar3 text-primary me-1"></i>${formatDate(ev.date)}</span>
+                    ${ev.time ? `<span><i class="bi bi-clock text-secondary me-1"></i>${formatTime(ev.time)}</span>` : ''}
+                </div>
+                <div class="divider"></div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    ${costLbl}
+                    <span class="star-rating small">${avgStars}</span>
+                </div>
+                ${actionHtml}
+            </div>
+        </div>
+    </div>`;
+}
+
+// =====================================================================
+// Event card renderer
+// =====================================================================
+function renderEventCard(e, showEditDelete) {
+    const isFull = e.maxParticipants > 0 && e.currentAttendees >= e.maxParticipants;
+
+    const spotsHtml = isFull
+        ? `<span class="spots-full"><i class="bi bi-x-circle me-1"></i>FULL</span>`
+        : `<span class="spots-ok"><i class="bi bi-people me-1"></i>${e.spotsRemaining} spot${e.spotsRemaining !== 1 ? 's' : ''} left</span>`;
+
+    const stars = e.averageRating > 0
+        ? `${'★'.repeat(Math.round(e.averageRating))}${'☆'.repeat(5 - Math.round(e.averageRating))} <small class="text-muted">${e.averageRating.toFixed(1)} (${e.ratingCount})</small>`
+        : '<small class="text-muted fst-italic">No ratings yet</small>';
+
+    let sourceBadge;
+    if (e.source === 'skiddle')
+        sourceBadge = `<span class="badge badge-source-skiddle"><i class="bi bi-music-note me-1"></i>Skiddle</span>`;
+    else if (e.source === 'ticketmaster')
+        sourceBadge = `<span class="badge badge-source-ticketmaster"><i class="bi bi-ticket me-1"></i>Ticketmaster</span>`;
+    else
+        sourceBadge = `<span class="badge badge-source-local"><i class="bi bi-mortarboard me-1"></i>Student</span>`;
+
+    const weatherHtml = e.weather
+        ? `<span class="badge bg-info text-dark ms-1"><i class="bi bi-cloud-sun me-1"></i>${e.weather}</span>`
+        : '';
+
+    const costHtml = e.cost === 0
+        ? `<span class="cost-pill cost-free"><i class="bi bi-gift me-1"></i>Free</span>`
+        : e.cost < 0
+            ? `<span class="cost-pill cost-unknown"><i class="bi bi-info-circle me-1"></i>See website</span>`
+            : `<span class="cost-pill cost-paid"><i class="bi bi-tag me-1"></i>£${Number(e.cost).toFixed(2)}</span>`;
+
+    const typeClass = `type-${(e.type || 'other').toLowerCase()}`;
+    const cardClass = e.source === 'ticketmaster' ? 'card-ticketmaster' : e.source === 'skiddle' ? 'card-skiddle' : 'card-local';
+
+    const isMyEvent = currentUser && e.publisherID === currentUser.studentId;
+    const isAdmin   = currentUser && currentUser.role === 'admin';
+
+    // Edit/delete buttons: show if showEditDelete flag, or admin in admin view
+    const editDeleteHtml = (showEditDelete || isAdmin) ? `
+        <div class="divider"></div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="openEditModal('${e.eventId}', ${JSON.stringify(e).replace(/"/g, '&quot;')})">
+                <i class="bi bi-pencil me-1"></i>Edit
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="deleteEvent('${e.eventId}')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>` : '';
+
+    return `
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 ${cardClass}">
+            <div class="card-body d-flex flex-column p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge ${typeClass} text-capitalize">${e.type || 'other'}</span>
+                    <div class="d-flex align-items-center flex-wrap gap-1">${sourceBadge}${weatherHtml}</div>
+                </div>
+                <h5 class="card-title mb-2">${escHtml(e.title)}</h5>
+                <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(e.venue)}</p>
+                <div class="d-flex justify-content-between align-items-center meta-row mb-1">
+                    <span><i class="bi bi-calendar3 text-primary me-1"></i>${formatDate(e.date)}</span>
+                    ${e.time ? `<span><i class="bi bi-clock text-secondary me-1"></i>${formatTime(e.time)}</span>` : ''}
+                </div>
+                <div class="divider"></div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    ${costHtml}
+                    ${spotsHtml}
+                </div>
+                <div class="star-rating mb-3">${stars}</div>
+                <div class="mt-auto">
+                    <button class="btn btn-primary btn-sm w-100 ${isFull ? 'disabled opacity-50' : ''}"
+                        onclick="openRegisterModal('${e.eventId}', '${escHtml(e.title)}')"
+                        ${isFull ? 'disabled' : ''}>
+                        <i class="bi bi-person-check me-1"></i>Register
+                    </button>
+                </div>
+                ${editDeleteHtml}
+            </div>
+        </div>
+    </div>`;
+}
+
+function clearFilters() {
+    document.getElementById('filter-type').value  = '';
+    document.getElementById('filter-venue').value = '';
+    document.getElementById('filter-date').value  = '';
+    loadEvents();
+}
+
+function formatDate(iso) {
+    if (!iso) return '';
+    try {
+        // Strip any time component so we always parse the date only (avoids timezone shift)
+        const datePart = iso.includes('T') ? iso.split('T')[0] : iso;
+        return new Date(datePart + 'T00:00:00').toLocaleDateString('en-GB', {
+            weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+        });
+    } catch (_) { return iso; }
+}
+
+/** Formats a 24h time string "HH:mm" → "7:00 PM" style */
+function formatTime(t) {
+    if (!t) return '';
+    try {
+        const [hStr, mStr] = t.split(':');
+        const h = parseInt(hStr, 10);
+        const m = parseInt(mStr || '0', 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12  = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    } catch (_) { return t; }
+}
+
+// =====================================================================
+// Add / Update Event — POST /api/events  or  POST /api/events/{id}/edit
+// =====================================================================
+async function submitAddEvent(e) {
+    e.preventDefault();
+    const editingId = document.getElementById('ev-editing-id').value.trim();
+    const isEditing = !!editingId;
+
+    const body = {
+        publisherID:     currentUser.studentId,
+        title:           document.getElementById('ev-title').value.trim(),
+        type:            document.getElementById('ev-type').value,
+        date:            document.getElementById('ev-date').value,
+        time:            document.getElementById('ev-time').value,
+        venue:           document.getElementById('ev-venue').value.trim(),
+        cost:            parseFloat(document.getElementById('ev-cost').value) || 0,
+        maxParticipants: parseInt(document.getElementById('ev-max').value) || 20,
+        latitude:        parseFloat(document.getElementById('ev-lat').value)  || 0,
+        longitude:       parseFloat(document.getElementById('ev-lng').value) || 0
+    };
+
+    const url    = isEditing ? `${API}/events/${editingId}/edit` : `${API}/events`;
+    const method = 'POST';
+
+    try {
+        const res  = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(body) });
+        const data = await res.json();
+        if (res.ok) {
+            showToast('success', isEditing ? `Event "${data.title}" updated!` : `Event "${data.title}" posted!`);
+            cancelEditForm();
+            loadEvents();
+            loadMyPostedEvents();
+        } else {
+            showToast('danger', data.error || (isEditing ? 'Failed to update event' : 'Failed to post event'));
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Edit Event Modal
+// =====================================================================
+function openEditModal(eventId, eventData) {
+    // eventData can be a string (from inline onclick) or object
+    const e = typeof eventData === 'string' ? JSON.parse(eventData.replace(/&quot;/g, '"')) : eventData;
+    document.getElementById('edit-event-id').value  = eventId;
+    document.getElementById('edit-title').value     = e.title || '';
+    document.getElementById('edit-type').value      = e.type  || 'other';
+    document.getElementById('edit-date').value      = e.date  || '';
+    document.getElementById('edit-cost').value      = e.cost  || 0;
+    document.getElementById('edit-max').value       = e.maxParticipants || 20;
+    document.getElementById('edit-venue').value     = e.venue || '';
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+async function submitEditEvent() {
+    const eventId = document.getElementById('edit-event-id').value;
+    const body = {
+        title:           document.getElementById('edit-title').value.trim(),
+        type:            document.getElementById('edit-type').value,
+        date:            document.getElementById('edit-date').value,
+        cost:            parseFloat(document.getElementById('edit-cost').value) || 0,
+        maxParticipants: parseInt(document.getElementById('edit-max').value) || 20,
+        venue:           document.getElementById('edit-venue').value.trim()
+    };
+    try {
+        const res  = await fetch(`${API}/events/${eventId}/edit`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        if (res.ok) {
+            showToast('success', 'Event updated!');
+            loadEvents();
+            loadMyPostedEvents();
+        } else {
+            showToast('danger', data.error || 'Failed to update event');
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Delete Event — DELETE /api/events/{id}
+// =====================================================================
+async function deleteEvent(eventId) {
+    if (!confirm('Are you sure you want to delete this event? This cannot be undone.')) return;
+    try {
+        const res  = await fetch(`${API}/events/${eventId}`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast('success', 'Event deleted.');
+            loadEvents();
+            loadMyPostedEvents();
+        } else {
+            showToast('danger', data.error || 'Failed to delete event');
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Register for Event — POST /api/events/{id}/register
+// =====================================================================
+function openRegisterModal(eventId, title) {
+    currentEventId = eventId;
+    document.getElementById('register-event-title').textContent = title;
+    document.getElementById('register-as-name').textContent = currentUser
+        ? `${currentUser.name} (${currentUser.studentId})` : 'Not logged in';
+    new bootstrap.Modal(document.getElementById('registerModal')).show();
+}
+
+async function submitRegister() {
+    if (!currentUser) { showToast('warning', 'Please log in first'); return; }
+    try {
+        const res  = await fetch(`${API}/events/${currentEventId}/register`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ studentId: currentUser.studentId })
+        });
+        const data = await res.json();
+        bootstrap.Modal.getInstance(document.getElementById('registerModal')).hide();
+        if (res.ok) {
+            showToast('success', `Registered! ${data.spotsRemaining} spots remaining.`);
+            loadEvents();
+            loadMyRegisteredEvents();
+        } else {
+            showToast('danger', data.error || 'Registration failed');
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Rate Event — POST /api/events/{id}/rate
+// =====================================================================
+function openRateModal(eventId, title, _unused) {
+    currentEventId = eventId;
+    document.getElementById('rate-event-title').textContent = title;
+    document.getElementById('rate-stars').value = '0';
+    document.querySelectorAll('.star-btn').forEach(s => s.textContent = '☆');
+    new bootstrap.Modal(document.getElementById('rateModal')).show();
+}
+
+function selectStar(val) {
+    document.getElementById('rate-stars').value = val;
+    document.querySelectorAll('.star-btn').forEach(s => {
+        s.textContent = parseInt(s.dataset.val) <= val ? '★' : '☆';
+    });
+}
+
+async function submitRate() {
+    if (!currentUser) { showToast('warning', 'Please log in first'); return; }
+    const stars = parseInt(document.getElementById('rate-stars').value);
+    if (stars < 1)  { showToast('warning', 'Please select a star rating'); return; }
+
+    try {
+        const res  = await fetch(`${API}/events/${currentEventId}/rate`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ studentId: currentUser.studentId, stars })
+        });
+        const data = await res.json();
+        bootstrap.Modal.getInstance(document.getElementById('rateModal')).hide();
+        if (res.ok) {
+            showToast('success', `Rating submitted! New average: ${data.averageRating} ★`);
+            // Refresh both Browse tab and My Events tab
+            loadEvents();
+            loadMyRegisteredEvents();
+        } else if (res.status === 409) {
+            showToast('warning', 'You have already rated this event.');
+            loadMyRegisteredEvents(); // Refresh so UI reflects actual state
+        } else {
+            showToast('danger', data.error || 'Rating failed');
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Cancel Registration — POST /api/events/{id}/cancel
+// =====================================================================
+async function cancelRegistration(eventId, eventTitle) {
+    if (!currentUser) { showToast('warning', 'Please log in first'); return; }
+    if (!confirm(`Cancel your registration for "${eventTitle}"?\nThis cannot be undone — you won't be able to re-register.`)) return;
+
+    try {
+        const res  = await fetch(`${API}/events/${eventId}/cancel`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ studentId: currentUser.studentId })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast('info', 'Registration cancelled.');
+            loadEvents();            // update spot count in Browse tab
+            loadMyRegisteredEvents();// move card to Past as "Cancelled"
+        } else if (res.status === 409) {
+            showToast('warning', 'Already cancelled.');
+            loadMyRegisteredEvents();
+        } else {
+            showToast('danger', data.error || 'Cancellation failed');
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Admin Panel
+// =====================================================================
+async function loadAdminPanel() {
+    await Promise.all([loadAdminAnalytics(), loadAdminStudents()]);
+}
+
+async function loadAdminAnalytics() {
+    try {
+        const res  = await fetch(API + '/admin/analytics', { headers: authHeaders() });
+        const d    = await res.json();
+        if (!res.ok) return;
+        document.getElementById('analytics-cards').innerHTML = `
+            <div class="col-6 col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#0d6efd,#0099ff)">
+                    <div class="stat-num">${d.totalEvents}</div>
+                    <div class="stat-lbl">Total Events</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#198754,#20c997)">
+                    <div class="stat-num">${d.totalStudents}</div>
+                    <div class="stat-lbl">Students</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#fd7e14,#ffc107)">
+                    <div class="stat-num">${d.totalRegistrations}</div>
+                    <div class="stat-lbl">Registrations</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card" style="background:linear-gradient(135deg,#6f42c1,#d63384)">
+                    <div class="stat-num">£${(d.totalRevenue || 0).toFixed(2)}</div>
+                    <div class="stat-lbl">Total Revenue</div>
+                </div>
+            </div>`;
+    } catch (err) {
+        document.getElementById('analytics-cards').innerHTML =
+            `<div class="col-12"><div class="alert alert-warning">Analytics unavailable: ${err.message}</div></div>`;
+    }
+}
+
+async function loadAdminStudents() {
+    const tbody = document.getElementById('admin-students-tbody');
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    try {
+        const res  = await fetch(API + '/admin/students', { headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok || !Array.isArray(data) || !data.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center py-2">No students found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(s => `
+            <tr>
+                <td><code>${escHtml(s.studentId)}</code></td>
+                <td>${escHtml(s.name)}</td>
+                <td>${escHtml(s.email)}</td>
+                <td><span class="badge ${s.role === 'admin' ? 'bg-danger' : 'bg-secondary'}">${s.role}</span></td>
+            </tr>`).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center">${err.message}</td></tr>`;
+    }
+}
+
+async function adminSync() {
+    showToast('info', 'Syncing external events…');
+    try {
+        const res  = await fetch(API + '/admin/sync', { method: 'POST', headers: authHeaders() });
+        const data = await res.json();
+        if (res.ok) {
+            showToast('success', `Synced ${data.eventsImported} external events.`);
+            loadEvents();
+        } else {
+            showToast('danger', data.error || 'Sync failed');
+        }
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+// =====================================================================
+// Utilities
+// =====================================================================
+function showToast(type, message) {
+    const id    = 'toast-' + Date.now();
+    const icons = { success: 'check-circle-fill', danger: 'x-circle-fill', warning: 'exclamation-triangle-fill', info: 'info-circle-fill' };
+    const html  = `
+        <div id="${id}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body"><i class="bi bi-${icons[type] || 'info-circle-fill'} me-2"></i>${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`;
+    document.getElementById('toast-container').insertAdjacentHTML('beforeend', html);
+    const toastEl = document.getElementById(id);
+    const toast   = new bootstrap.Toast(toastEl, { delay: 4000 });
+    toast.show();
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Start on login page
+window.addEventListener('DOMContentLoaded', showLoginPage);
+</script>
+</body>
+</html>

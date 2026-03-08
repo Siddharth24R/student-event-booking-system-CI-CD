@@ -1,0 +1,19 @@
+# Firebase service account key — NEVER commit this to git
+*.json
+!events.json
+
+# Environment file containing API keys — NEVER commit this to git
+.env
+
+# Maven build output
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
