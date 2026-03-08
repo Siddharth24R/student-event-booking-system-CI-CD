@@ -509,3 +509,4 @@ Post-pipeline: prints success/failure message and cleans the workspace.
 - Java 11 tool configured in Jenkins (named `Java 11`)
 - Docker available on the Jenkins agent
 - `.env` file present on the agent with API keys
+# CI/CD pipeline active
