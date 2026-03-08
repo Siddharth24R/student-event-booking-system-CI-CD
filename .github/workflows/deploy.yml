@@ -34,33 +34,30 @@ jobs:
       - name: Run Tests
         run: mvn test
 
-      # Step 5 - Authenticate to GCP
+      # Step 5 - Authenticate to GCP using service account key file
       - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp_key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp_key.json
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
-      # Step 6 - Set up Cloud SDK
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-
-      # Step 7 - Configure Docker for GCR
+      # Step 6 - Configure Docker for GCR
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+        run: gcloud auth configure-docker --quiet
 
-      # Step 8 - Build Docker image
+      # Step 7 - Build Docker image
       - name: Build Docker Image
         run: |
           docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} .
           docker tag gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
 
-      # Step 9 - Push Docker image to GCR
+      # Step 8 - Push Docker image to GCR
       - name: Push Docker Image to GCR
         run: |
           docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }}
           docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
 
-      # Step 10 - Deploy to Cloud Run
+      # Step 9 - Deploy to Cloud Run
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
