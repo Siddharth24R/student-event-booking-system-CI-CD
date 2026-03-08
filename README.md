@@ -461,3 +461,51 @@ No authentication required.
 **CORS:** `CorsFilter` allows all origins (`*`) so the SPA can be served from any host during development.
 
 **Performance testing:** A JMeter test plan (`jmeter/StudentEventBooking.jmx`) is included for load testing all major endpoints.
+
+---
+
+## CI/CD Pipeline
+
+This project includes two CI/CD pipeline configurations to demonstrate both modern cloud-based and enterprise-grade DevOps workflows.
+
+### 1. GitHub Actions (`.github/workflows/deploy.yml`)
+
+Triggers automatically on every push to the `main` branch:
+
+| Step | Action |
+|---|---|
+| Checkout | Pulls latest code |
+| Java 11 setup | Configures JDK + Maven cache |
+| Build | `mvn clean package -DskipTests` |
+| Test | `mvn test` |
+| Docker Build | Builds image from `Dockerfile` |
+| Docker Push | Pushes image to Docker Hub |
+
+**Required GitHub Secrets:**
+
+Go to your repo → **Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret | Value |
+|---|---|
+| `DOCKER_USERNAME` | Your Docker Hub username |
+| `DOCKER_PASSWORD` | Your Docker Hub password or access token |
+
+### 2. Jenkinsfile (Enterprise Demo)
+
+A `Jenkinsfile` in the project root defines a declarative pipeline with the following stages:
+
+| Stage | Description |
+|---|---|
+| **Checkout** | Pulls source from SCM |
+| **Build** | `mvn clean package -DskipTests` |
+| **Test** | `mvn test` + publishes JUnit XML reports |
+| **Docker Build** | Builds and tags the Docker image |
+| **Deploy** | Stops old container, runs new one with `.env` config |
+
+Post-pipeline: prints success/failure message and cleans the workspace.
+
+**Jenkins prerequisites:**
+- Maven 3.9 tool configured in Jenkins (named `Maven 3.9`)
+- Java 11 tool configured in Jenkins (named `Java 11`)
+- Docker available on the Jenkins agent
+- `.env` file present on the agent with API keys
