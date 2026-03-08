@@ -487,8 +487,8 @@ Go to your repo → **Settings → Secrets and variables → Actions → New rep
 
 | Secret | Value |
 |---|---|
-| `DOCKER_USERNAME` | Your Docker Hub username |
-| `DOCKER_PASSWORD` | Your Docker Hub password or access token |
+| `GCP_PROJECT_ID` | Your GCP project ID (e.g. `my-project-123456`) |
+| `GCP_SA_KEY` | Service account JSON key with roles: Cloud Run Admin, Storage Admin, Service Account User |
 
 ### 2. Jenkinsfile (Enterprise Demo)
 

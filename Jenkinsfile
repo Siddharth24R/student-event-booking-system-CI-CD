@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'student-event-booking'
-        IMAGE_TAG  = "${env.BUILD_NUMBER}"
+        IMAGE_NAME     = 'student-event-booking'
+        IMAGE_TAG      = "${env.BUILD_NUMBER}"
+        GCP_PROJECT_ID = credentials('GCP_PROJECT_ID')
     }
 
     tools {
@@ -46,23 +47,31 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo "Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
+                sh "docker build -t gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker tag gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG} gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}:latest"
             }
         }
 
-        stage('Deploy') {
+        stage('Push to GCR') {
             steps {
-                echo 'Deploying container...'
-                sh '''
-                    docker stop student-event-booking || true
-                    docker rm   student-event-booking || true
-                    docker run -d \
-                        --name student-event-booking \
-                        -p 8080:8080 \
-                        --env-file .env \
-                        student-event-booking:latest
-                '''
+                echo 'Pushing image to Google Container Registry...'
+                sh "docker push gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "docker push gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Deploy to Cloud Run') {
+            steps {
+                echo 'Deploying to GCP Cloud Run...'
+                sh """
+                    gcloud run deploy ${IMAGE_NAME} \
+                        --image gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}:${IMAGE_TAG} \
+                        --platform managed \
+                        --region europe-west2 \
+                        --allow-unauthenticated \
+                        --port 8080 \
+                        --memory 512Mi
+                """
             }
         }
     }
