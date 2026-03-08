@@ -12,3 +12,5 @@ docker run -p 8080:8080 `
   --env-file .env `
   -v "A:/Projects/VS - Code/Building/Student-Event-Booking/student-event-booking-system-firebase-adminsdk-fbsvc-f2fdc3f26a.json:/app/serviceAccountKey.json" `
   student-event-booking
+
+  #  student-event-booking-system
