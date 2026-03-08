@@ -34,7 +34,16 @@ jobs:
       - name: Run Tests
         run: mvn test
 
-      # Step 5 - Authenticate to GCP
+      # Step 5 - Debug secrets (safe - only prints lengths)
+      - name: Debug secrets
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          echo "GCP_SA_KEY length: ${#GCP_SA_KEY}"
+          echo "GCP_PROJECT_ID length: ${#GCP_PROJECT_ID}"
+
+      # Step 6 - Authenticate to GCP
       - name: Authenticate to GCP
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
