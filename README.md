@@ -20,6 +20,31 @@ A full-stack Java EE REST API + single-page web app that lets students discover,
 
 ---
 
+## Features
+
+| Feature | Details |
+|---|---|
+| Event discovery | Browse all events with search, filter by type/date/venue |
+| External events | Live sync from Skiddle + Ticketmaster every 5 minutes |
+| Live weather | OpenWeatherMap data shown per event |
+| JWT auth | BCrypt password hashing, 24-hour tokens |
+| Student dashboard | My Events tab: view registrations and posted events |
+| Add/Edit/Delete events | Students manage own events; admins manage all |
+| Venue autocomplete | Nominatim (OpenStreetMap) search — no API key required |
+| Venue map link | Venue name is a clickable Google Maps link |
+| Event time display | Shows formatted time or "TBD" for external events with no fixed time |
+| Star ratings | Students rate attended events; live average shown |
+| Admin panel | Analytics dashboard, student management, force sync |
+| Admin user management | Delete individual students or bulk-delete multiple students |
+| Admin login guard | Admin login form rejects non-admin accounts at both client + server |
+| API resilience | Skiddle, Ticketmaster, and OpenWeatherMap failures are isolated — existing data always served |
+| In-memory cache | 60-second TTL cache on `GET /api/events` with write-through invalidation |
+| In-memory fallback | Full offline mode seeded from `events.json` when Firestore is unavailable |
+| CI/CD | GitHub Actions → Google Cloud Run + Artifact Registry; Jenkinsfile included |
+| Performance testing | JMeter test plan covering all major endpoints (results CSV included) |
+
+---
+
 ## Project Structure
 
 ```
@@ -32,7 +57,8 @@ StudentEventBooking/
 ├── firestore.rules                    # Firestore security rules
 ├── .firebaserc                        # Firebase project config
 ├── jmeter/
-│   └── StudentEventBooking.jmx        # JMeter performance test plan
+│   ├── StudentEventBooking.jmx        # JMeter performance test plan
+│   └── results-summary.csv           # JMeter load test results (50 concurrent users)
 └── src/main/
     ├── java/com/ntu/eventbooking/
     │   ├── ApplicationConfig.java     # Jersey application configuration
@@ -369,6 +395,33 @@ All admin endpoints require `Authorization: Bearer <token>` with role `admin`.
 
 ---
 
+#### DELETE /api/admin/students/{studentId} — Delete a student
+
+**Response 200:**
+```json
+{ "deleted": "N0123456" }
+```
+
+**Errors:** 403 (cannot delete admin accounts), 404 (student not found)
+
+---
+
+#### DELETE /api/admin/students/bulk — Delete multiple students
+
+**Request:**
+```json
+{ "studentIds": ["N0123456", "N0789012"] }
+```
+
+**Response 200:**
+```json
+{ "deleted": 2 }
+```
+
+Admin accounts in the list are silently skipped.
+
+---
+
 #### GET /api/admin/analytics — System analytics
 
 **Response 200:**
@@ -460,7 +513,7 @@ No authentication required.
 
 **CORS:** `CorsFilter` allows all origins (`*`) so the SPA can be served from any host during development.
 
-**Performance testing:** A JMeter test plan (`jmeter/StudentEventBooking.jmx`) is included for load testing all major endpoints.
+**Performance testing:** A JMeter test plan (`jmeter/StudentEventBooking.jmx`) covers all major endpoints. `jmeter/results-summary.csv` contains the results from a 50-concurrent-user load test covering login, event listing, registration, cancellation, and rating.
 
 ---
 
