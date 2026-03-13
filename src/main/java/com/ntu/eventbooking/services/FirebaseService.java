@@ -768,6 +768,21 @@ public class FirebaseService {
     }
 
     /**
+     * Deletes a student account from the system by studentId.
+     */
+    public void deleteStudent(String studentId) {
+        if (firebaseAvailable) {
+            try {
+                db.collection("students").document(studentId).delete().get();
+            } catch (InterruptedException | ExecutionException e) {
+                System.out.println("[FirebaseService] deleteStudent error: " + e.getMessage());
+            }
+        } else {
+            fallbackStudents.values().removeIf(s -> studentId.equals(s.getStudentId()));
+        }
+    }
+
+    /**
      * Returns all eventIds that a given student has registered for.
      * Scans every event's registrations sub-collection for the studentId document.
      * Used by GET /api/students/{studentId}/registrations

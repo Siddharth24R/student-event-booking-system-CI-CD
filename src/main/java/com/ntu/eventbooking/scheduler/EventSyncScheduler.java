@@ -74,15 +74,29 @@ public class EventSyncScheduler {
     public static int syncNow() {
         List<Event> allExternal = new ArrayList<>();
 
-        List<Event> skiddleEvents = SkiddleService.fetchNearbyEvents(52.9548, -1.1581);
-        allExternal.addAll(skiddleEvents);
+        try {
+            List<Event> skiddleEvents = SkiddleService.fetchNearbyEvents(52.9548, -1.1581);
+            allExternal.addAll(skiddleEvents);
+            System.out.println("[EventSyncScheduler] Skiddle returned " + skiddleEvents.size() + " events");
+        } catch (Exception ex) {
+            System.out.println("[EventSyncScheduler] Skiddle fetch failed (site still works): " + ex.getMessage());
+        }
 
-        List<Event> tmEvents = TicketmasterService.fetchEvents("Nottingham", 12);
-        allExternal.addAll(tmEvents);
+        try {
+            List<Event> tmEvents = TicketmasterService.fetchEvents("Nottingham", 12);
+            allExternal.addAll(tmEvents);
+            System.out.println("[EventSyncScheduler] Ticketmaster returned " + tmEvents.size() + " events");
+        } catch (Exception ex) {
+            System.out.println("[EventSyncScheduler] Ticketmaster fetch failed (site still works): " + ex.getMessage());
+        }
 
         FirebaseService firebase = FirebaseService.getInstance();
         for (Event event : allExternal) {
-            firebase.saveExternalEvent(event);
+            try {
+                firebase.saveExternalEvent(event);
+            } catch (Exception ex) {
+                System.out.println("[EventSyncScheduler] Failed to save event " + event.getEventId() + ": " + ex.getMessage());
+            }
         }
 
         EventCache.invalidateAll();

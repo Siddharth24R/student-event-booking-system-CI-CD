@@ -58,6 +58,56 @@ public class AdminResource {
     }
 
     // =========================================================================
+    // DELETE /api/admin/students/{studentId} — Delete individual student
+    // =========================================================================
+
+    @DELETE
+    @Path("students/{studentId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteStudent(@PathParam("studentId") String studentId) {
+        Student s = firebase.getStudentById(studentId);
+        if (s == null) {
+            return Response.status(404).entity(ResourceUtil.error("Student not found")).build();
+        }
+        if ("admin".equals(s.getRole())) {
+            return Response.status(403).entity(ResourceUtil.error("Cannot delete admin accounts")).build();
+        }
+        firebase.deleteStudent(studentId);
+        return Response.ok(new JSONObject().put("deleted", studentId).toString()).build();
+    }
+
+    // =========================================================================
+    // DELETE /api/admin/students/bulk — Delete multiple students
+    // =========================================================================
+
+    @DELETE
+    @Path("students/bulk")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteStudentsBulk(String bodyStr) {
+        JSONObject body;
+        try {
+            body = new JSONObject(bodyStr != null ? bodyStr : "{}");
+        } catch (Exception e) {
+            return Response.status(400).entity(ResourceUtil.error("Invalid JSON")).build();
+        }
+        JSONArray ids = body.optJSONArray("studentIds");
+        if (ids == null || ids.length() == 0) {
+            return Response.status(400).entity(ResourceUtil.error("studentIds array required")).build();
+        }
+        int deleted = 0;
+        for (int i = 0; i < ids.length(); i++) {
+            String id = ids.getString(i);
+            Student s = firebase.getStudentById(id);
+            if (s != null && !"admin".equals(s.getRole())) {
+                firebase.deleteStudent(id);
+                deleted++;
+            }
+        }
+        return Response.ok(new JSONObject().put("deleted", deleted).toString()).build();
+    }
+
+    // =========================================================================
     // GET /api/admin/analytics — Aggregated analytics
     // =========================================================================
 

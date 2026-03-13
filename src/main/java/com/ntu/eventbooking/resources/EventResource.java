@@ -149,8 +149,12 @@ public class EventResource {
 
         // Attach live weather to each event from OpenWeatherMap
         for (Event e : events) {
-            String weather = WeatherService.getWeather(e.getLatitude(), e.getLongitude());
-            e.setWeather(weather);
+            try {
+                String weather = WeatherService.getWeather(e.getLatitude(), e.getLongitude());
+                e.setWeather(weather);
+            } catch (Exception ex) {
+                e.setWeather("");
+            }
         }
 
         // Apply optional filters
@@ -608,6 +612,18 @@ public class EventResource {
     // Helpers
     // =========================================================================
 
+    private String defaultTimeForType(String type) {
+        if (type == null) return "19:00";
+        switch (type.toLowerCase()) {
+            case "concert": return "19:30";
+            case "social":  return "19:00";
+            case "gaming":  return "20:00";
+            case "sport":   return "14:00";
+            case "study":   return "13:00";
+            default:        return "19:00";
+        }
+    }
+
     /** Converts an Event POJO to a JSONObject for the response body. */
     private JSONObject eventToJson(Event e) {
         JSONObject obj = new JSONObject();
@@ -616,7 +632,8 @@ public class EventResource {
         obj.put("title", e.getTitle());
         obj.put("type", e.getType());
         obj.put("date", e.getDate());
-        obj.put("time", e.getTime() != null ? e.getTime() : "");
+        String time = (e.getTime() != null && !e.getTime().isEmpty()) ? e.getTime() : defaultTimeForType(e.getType());
+        obj.put("time", time);
         obj.put("venue", e.getVenue());
         obj.put("cost", e.getCost());
         obj.put("maxParticipants", e.getMaxParticipants());

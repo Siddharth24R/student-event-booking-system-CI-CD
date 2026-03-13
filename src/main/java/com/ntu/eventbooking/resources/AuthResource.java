@@ -70,6 +70,13 @@ public class AuthResource {
             return Response.status(401).entity(ResourceUtil.error("Invalid credentials")).build();
         }
 
+        // Reject non-admin accounts trying to use the admin login form (adminCode was supplied)
+        if (!ResourceUtil.isBlank(adminCode) && !"admin".equals(student.getRole())) {
+            return Response.status(403)
+                    .entity(ResourceUtil.error("Admin login is for admin accounts only"))
+                    .build();
+        }
+
         // Admin: also verify adminCode
         if ("admin".equals(student.getRole())) {
             if (ResourceUtil.isBlank(adminCode) || !adminCode.equals(student.getAdminCode())) {

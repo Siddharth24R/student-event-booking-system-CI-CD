@@ -171,6 +171,11 @@
         .stat-card { border-radius: 12px; color: #fff; text-align: center; padding: 1.2rem; }
         .stat-card .stat-num { font-size: 2rem; font-weight: 700; }
         .stat-card .stat-lbl { font-size: .82rem; opacity: .85; }
+
+        /* ── Venue autocomplete ── */
+        #venue-suggestions { max-height: 220px; overflow-y: auto; z-index: 1050; }
+        #venue-suggestions .list-group-item { cursor: pointer; font-size: .9rem; }
+        #venue-suggestions .list-group-item:hover { background: #f0f4ff; }
     </style>
 </head>
 <body>
@@ -451,18 +456,18 @@
                                         <input type="number" id="ev-max" class="form-control" value="20" min="1" required>
                                     </div>
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-4 position-relative">
                                     <label class="form-label fw-semibold">Venue <span class="text-danger">*</span></label>
-                                    <input type="text" id="ev-venue" class="form-control" placeholder="e.g. NTU Clifton Campus" required>
-                                </div>
-                                <div class="row g-2 mb-4">
-                                    <div class="col-6">
-                                        <label class="form-label fw-semibold text-muted">Latitude <small>(optional)</small></label>
-                                        <input type="number" id="ev-lat" class="form-control" placeholder="52.9548" step="any">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                        <input type="text" id="ev-venue" class="form-control" placeholder="Search for a venue…"
+                                               autocomplete="off" required oninput="venueSearch(this.value)" onblur="hideVenueSuggestions()">
                                     </div>
-                                    <div class="col-6">
-                                        <label class="form-label fw-semibold text-muted">Longitude <small>(optional)</small></label>
-                                        <input type="number" id="ev-lng" class="form-control" placeholder="-1.1581" step="any">
+                                    <ul id="venue-suggestions" class="list-group position-absolute w-100 shadow" style="display:none; top:100%; left:0; z-index:1050;"></ul>
+                                    <input type="hidden" id="ev-lat">
+                                    <input type="hidden" id="ev-lng">
+                                    <div id="venue-coords" class="form-text text-success mt-1" style="display:none;">
+                                        <i class="bi bi-pin-map me-1"></i><span id="venue-coords-text"></span>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-success w-100" id="add-form-submit-btn">
@@ -548,20 +553,28 @@
 
             <!-- Students table -->
             <h6 class="fw-semibold mb-2"><i class="bi bi-people me-2"></i>Registered Students</h6>
+            <div id="bulk-delete-bar" class="d-none mb-2 d-flex align-items-center gap-2">
+                <span id="selected-count" class="text-muted small">0 selected</span>
+                <button class="btn btn-sm btn-danger" onclick="deleteSelectedStudents()">
+                    <i class="bi bi-trash"></i> Delete Selected
+                </button>
+            </div>
             <div class="card mb-4">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
+                                    <th><input type="checkbox" id="select-all-students" onchange="toggleSelectAll(this)"></th>
                                     <th>Student ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-students-tbody">
-                                <tr><td colspan="4" class="text-center text-muted py-3">Loading…</td></tr>
+                                <tr><td colspan="6" class="text-center text-muted py-3">Loading…</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -802,6 +815,10 @@ async function submitLogin(e, loginType) {
         });
         const data = await res.json();
         if (!res.ok) { showToast('danger', data.error || 'Login failed'); return; }
+        if (loginType === 'admin' && data.role !== 'admin') {
+            showToast('danger', 'This login is for admins only. Please use the Student login tab.');
+            return;
+        }
 
         authToken   = data.token;
         currentUser = { studentId: data.studentId, name: data.name, email: data.email, role: data.role };
@@ -896,6 +913,58 @@ async function loadEvents() {
 }
 
 // =====================================================================
+// Venue autocomplete (Nominatim / OpenStreetMap)
+// =====================================================================
+let venueSearchTimer = null;
+
+async function venueSearch(q) {
+    clearTimeout(venueSearchTimer);
+    const ul = document.getElementById('venue-suggestions');
+    if (!q || q.length < 3) { ul.style.display = 'none'; return; }
+    venueSearchTimer = setTimeout(async () => {
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&countrycodes=gb`;
+            const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+            const data = await res.json();
+            if (!data.length) { ul.style.display = 'none'; return; }
+            ul.innerHTML = data.map((r, i) => `
+                <li class="list-group-item list-group-item-action py-2"
+                    onmousedown="selectVenue(${i})"
+                    data-name="${escHtml(r.display_name)}"
+                    data-lat="${r.lat}"
+                    data-lng="${r.lon}">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(r.display_name)}
+                </li>`).join('');
+            ul.style.display = 'block';
+        } catch (_) { ul.style.display = 'none'; }
+    }, 300);
+}
+
+function selectVenue(idx) {
+    const ul   = document.getElementById('venue-suggestions');
+    const item = ul.querySelectorAll('li')[idx];
+    if (!item) return;
+    const name      = item.dataset.name;
+    const lat       = parseFloat(item.dataset.lat);
+    const lng       = parseFloat(item.dataset.lng);
+    const shortName = name.split(',')[0].trim();
+    document.getElementById('ev-venue').value = shortName;
+    document.getElementById('ev-lat').value   = lat;
+    document.getElementById('ev-lng').value   = lng;
+    ul.style.display = 'none';
+    const coordsText = document.getElementById('venue-coords-text');
+    coordsText.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)} — location confirmed`;
+    document.getElementById('venue-coords').style.display = 'block';
+}
+
+function hideVenueSuggestions() {
+    setTimeout(() => {
+        const ul = document.getElementById('venue-suggestions');
+        if (ul) ul.style.display = 'none';
+    }, 200);
+}
+
+// =====================================================================
 // Tab switch listeners
 // =====================================================================
 document.addEventListener('shown.bs.tab', async function(e) {
@@ -962,7 +1031,7 @@ function renderPostedEventCard(ev) {
                 <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(ev.venue)}</p>
                 <div class="d-flex justify-content-between align-items-center meta-row mb-2">
                     <span><i class="bi bi-calendar3 text-primary me-1"></i>${formatDate(ev.date)}</span>
-                    ${ev.time ? `<span><i class="bi bi-clock text-secondary me-1"></i>${formatTime(ev.time)}</span>` : ''}
+                    <span><i class="bi bi-clock text-secondary me-1"></i>${ev.time ? formatTime(ev.time) : '<span class="text-muted">TBD</span>'}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-auto">
                     ${costLbl}
@@ -986,6 +1055,10 @@ function prefillEditForm(eventId, evData) {
     document.getElementById('ev-venue').value  = ev.venue  || '';
     document.getElementById('ev-lat').value    = ev.latitude  || '';
     document.getElementById('ev-lng').value    = ev.longitude || '';
+    if (ev.latitude && ev.longitude) {
+        document.getElementById('venue-coords-text').textContent = `${ev.latitude}, ${ev.longitude} — location confirmed`;
+        document.getElementById('venue-coords').style.display = 'block';
+    }
 
     document.getElementById('add-form-heading').innerHTML  = '<i class="bi bi-pencil me-2"></i>Edit Event';
     document.getElementById('add-form-submit-btn').innerHTML = '<i class="bi bi-save me-1"></i>Update Event';
@@ -999,6 +1072,9 @@ function prefillEditForm(eventId, evData) {
 function cancelEditForm() {
     document.getElementById('ev-editing-id').value = '';
     document.getElementById('add-event-form').reset();
+    document.getElementById('ev-lat').value = '';
+    document.getElementById('ev-lng').value = '';
+    document.getElementById('venue-coords').style.display = 'none';
     document.getElementById('add-form-heading').innerHTML  = '<i class="bi bi-plus-circle me-2"></i>Post a New Event';
     document.getElementById('add-form-submit-btn').innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Post Event';
     document.getElementById('add-form-submit-btn').className = 'btn btn-success w-100';
@@ -1169,7 +1245,7 @@ function renderRegisteredCard(ev, isPast) {
                 <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(ev.venue)}</p>
                 <div class="d-flex justify-content-between align-items-center meta-row mb-2">
                     <span><i class="bi bi-calendar3 text-primary me-1"></i>${formatDate(ev.date)}</span>
-                    ${ev.time ? `<span><i class="bi bi-clock text-secondary me-1"></i>${formatTime(ev.time)}</span>` : ''}
+                    <span><i class="bi bi-clock text-secondary me-1"></i>${ev.time ? formatTime(ev.time) : '<span class="text-muted">TBD</span>'}</span>
                 </div>
                 <div class="divider"></div>
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1241,10 +1317,10 @@ function renderEventCard(e, showEditDelete) {
                     <div class="d-flex align-items-center flex-wrap gap-1">${sourceBadge}${weatherHtml}</div>
                 </div>
                 <h5 class="card-title mb-2">${escHtml(e.title)}</h5>
-                <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escHtml(e.venue)}</p>
+                <p class="meta-row mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.venue)}" target="_blank" rel="noopener" class="text-decoration-none">${escHtml(e.venue)}</a></p>
                 <div class="d-flex justify-content-between align-items-center meta-row mb-1">
                     <span><i class="bi bi-calendar3 text-primary me-1"></i>${formatDate(e.date)}</span>
-                    ${e.time ? `<span><i class="bi bi-clock text-secondary me-1"></i>${formatTime(e.time)}</span>` : ''}
+                    <span><i class="bi bi-clock text-secondary me-1"></i>${e.time ? formatTime(e.time) : '<span class="text-muted">TBD</span>'}</span>
                 </div>
                 <div class="divider"></div>
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1559,23 +1635,72 @@ async function loadAdminAnalytics() {
 
 async function loadAdminStudents() {
     const tbody = document.getElementById('admin-students-tbody');
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm"></div></td></tr>';
+    // Reset select-all and bulk bar
+    const selectAll = document.getElementById('select-all-students');
+    if (selectAll) selectAll.checked = false;
+    document.getElementById('bulk-delete-bar')?.classList.add('d-none');
     try {
         const res  = await fetch(API + '/admin/students', { headers: authHeaders() });
         const data = await res.json();
         if (!res.ok || !Array.isArray(data) || !data.length) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center py-2">No students found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-2">No students found</td></tr>';
             return;
         }
         tbody.innerHTML = data.map(s => `
             <tr>
+                <td>${s.role !== 'admin' ? `<input type="checkbox" class="student-checkbox" value="${escHtml(s.studentId)}" onchange="updateBulkBar()">` : ''}</td>
                 <td><code>${escHtml(s.studentId)}</code></td>
                 <td>${escHtml(s.name)}</td>
                 <td>${escHtml(s.email)}</td>
                 <td><span class="badge ${s.role === 'admin' ? 'bg-danger' : 'bg-secondary'}">${s.role}</span></td>
+                <td>${s.role !== 'admin' ? `<button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="deleteStudent('${escHtml(s.studentId)}','${escHtml(s.name)}')"><i class="bi bi-trash"></i></button>` : ''}</td>
             </tr>`).join('');
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center">${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">${err.message}</td></tr>`;
+    }
+}
+
+function toggleSelectAll(cb) {
+    document.querySelectorAll('.student-checkbox').forEach(c => { c.checked = cb.checked; });
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const n = document.querySelectorAll('.student-checkbox:checked').length;
+    document.getElementById('selected-count').textContent = n + ' selected';
+    document.getElementById('bulk-delete-bar').classList.toggle('d-none', n === 0);
+}
+
+async function deleteStudent(studentId, name) {
+    if (!confirm(`Delete student ${name} (${studentId})?`)) return;
+    try {
+        const res  = await fetch(API + '/admin/students/' + encodeURIComponent(studentId), { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { showToast('danger', data.error || 'Delete failed'); return; }
+        showToast('success', `Deleted ${name}`);
+        loadAdminStudents();
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
+    }
+}
+
+async function deleteSelectedStudents() {
+    const ids = [...document.querySelectorAll('.student-checkbox:checked')].map(c => c.value);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} student(s)?`)) return;
+    try {
+        const res  = await fetch(API + '/admin/students/bulk', {
+            method: 'DELETE',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentIds: ids })
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast('danger', data.error || 'Bulk delete failed'); return; }
+        showToast('success', `Deleted ${data.deleted} student(s)`);
+        loadAdminStudents();
+    } catch (err) {
+        showToast('danger', 'Network error: ' + err.message);
     }
 }
 
