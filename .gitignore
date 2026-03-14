@@ -5,6 +5,8 @@ jmeter.log
 
 # Firebase service account key — NEVER commit this to git
 *.json
+!firebase.json
+!firestore.indexes.json
 !events.json
 
 # Environment file containing API keys — NEVER commit this to git
@@ -13,11 +15,18 @@ jmeter.log
 # Maven build output
 target/
 
-# IDE files
+# IDE and editor files
 .idea/
 *.iml
 .vscode/
 *.class
+.claude/
+
+# PDF reference papers — do not redistribute
+pdf/
+
+# Report generator output (keep scripts, not generated docs)
+report_generator/*.docx
 
 # OS files
 .DS_Store
