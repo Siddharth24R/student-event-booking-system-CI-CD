@@ -7,185 +7,127 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #222; padding: 32px 24px; }
 
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f0f4f8;
-      color: #222;
-      padding: 32px 24px;
-    }
-
-    /* ── Header ── */
     .header {
       background: linear-gradient(135deg, #003f7f 0%, #0066cc 100%);
-      color: #fff;
-      border-radius: 12px;
-      padding: 36px 40px;
-      margin-bottom: 28px;
+      color: #fff; border-radius: 12px; padding: 36px 40px; margin-bottom: 28px;
     }
     .header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 6px; }
     .header p  { font-size: 0.95rem; opacity: .85; }
-    .header .meta {
-      display: flex; gap: 32px; margin-top: 20px; flex-wrap: wrap;
-    }
+    .header .meta { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
     .header .meta span {
-      background: rgba(255,255,255,.15);
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-size: .85rem;
-      font-weight: 600;
+      background: rgba(255,255,255,.15); border-radius: 6px;
+      padding: 6px 14px; font-size: .82rem; font-weight: 600;
     }
 
-    /* ── Summary cards ── */
     .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
-      margin-bottom: 28px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px; margin-bottom: 28px;
     }
     .card {
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px 16px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,.07);
-      border-top: 4px solid #0066cc;
+      background: #fff; border-radius: 10px; padding: 20px 16px; text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.07); border-top: 4px solid #0066cc;
     }
     .card.green  { border-top-color: #28a745; }
     .card.orange { border-top-color: #fd7e14; }
     .card.red    { border-top-color: #dc3545; }
-    .card .value { font-size: 1.6rem; font-weight: 700; color: #003f7f; }
+    .card .value { font-size: 1.55rem; font-weight: 700; color: #003f7f; }
     .card.green  .value { color: #155724; }
     .card.orange .value { color: #7c4700; }
     .card.red    .value { color: #721c24; }
     .card .label { font-size: .78rem; color: #666; margin-top: 4px; }
 
-    /* ── Section ── */
     .section {
-      background: #fff;
-      border-radius: 10px;
-      padding: 28px 28px;
-      margin-bottom: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.07);
+      background: #fff; border-radius: 10px; padding: 28px;
+      margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
     }
     .section h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #003f7f;
-      margin-bottom: 18px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #e8eef5;
+      font-size: 1.1rem; font-weight: 700; color: #003f7f;
+      margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid #e8eef5;
     }
 
-    /* ── Table ── */
     .tbl-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-    thead th {
-      background: #003f7f;
-      color: #fff;
-      padding: 10px 12px;
-      text-align: left;
-      white-space: nowrap;
-    }
+    thead th { background: #003f7f; color: #fff; padding: 10px 12px; text-align: left; white-space: nowrap; }
     tbody tr:nth-child(even) { background: #f5f8fc; }
-    tbody td {
-      padding: 9px 12px;
-      border-bottom: 1px solid #e5eaf0;
-      white-space: nowrap;
-    }
+    tbody td { padding: 9px 12px; border-bottom: 1px solid #e5eaf0; white-space: nowrap; }
+
     .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: .78rem;
-      font-weight: 600;
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: .78rem; font-weight: 600;
     }
     .badge-ok   { background: #d4edda; color: #155724; }
     .badge-warn { background: #fff3cd; color: #856404; }
     .badge-bad  { background: #f8d7da; color: #721c24; }
     .badge-info { background: #cce5ff; color: #004085; }
 
-    /* ── Charts ── */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     @media (max-width: 800px) { .charts-grid { grid-template-columns: 1fr; } }
     .chart-box { position: relative; height: 300px; }
+    .chart-title { font-size: .9rem; color: #555; margin-bottom: 12px; font-weight: 600; }
 
-    /* ── Findings ── */
     .findings { list-style: none; }
     .findings li {
-      padding: 12px 16px;
-      border-left: 4px solid #0066cc;
-      background: #f0f6ff;
-      border-radius: 0 8px 8px 0;
-      margin-bottom: 10px;
-      font-size: .92rem;
-      line-height: 1.5;
+      padding: 12px 16px; border-left: 4px solid #0066cc; background: #f0f6ff;
+      border-radius: 0 8px 8px 0; margin-bottom: 10px; font-size: .92rem; line-height: 1.6;
     }
-    .findings li.warn { border-color: #fd7e14; background: #fff7f0; }
-    .findings li.ok   { border-color: #28a745; background: #f0fff4; }
-    .findings li.note { border-color: #6c757d; background: #f8f9fa; }
+    .findings li.warn  { border-color: #fd7e14; background: #fff7f0; }
+    .findings li.ok    { border-color: #28a745; background: #f0fff4; }
+    .findings li.note  { border-color: #6c757d; background: #f8f9fa; }
     .findings li strong { color: #003f7f; }
-    .findings li.warn strong { color: #7c4700; }
-    .findings li.ok   strong { color: #155724; }
+    .findings li.warn  strong { color: #7c4700; }
+    .findings li.ok    strong { color: #155724; }
 
-    /* ── Footer ── */
-    footer {
-      text-align: center;
-      font-size: .8rem;
-      color: #999;
-      margin-top: 8px;
-    }
+    footer { text-align: center; font-size: .8rem; color: #999; margin-top: 8px; }
   </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
+<!-- HEADER -->
 <div class="header">
   <h1>JMeter Load Test Report</h1>
   <p>Student Event Booking System — ISYS40061 Coursework Performance Analysis</p>
   <div class="meta">
     <span>Module: ISYS40061</span>
-    <span>Test Tool: Apache JMeter</span>
-    <span>Concurrent Users: 50</span>
+    <span>Tool: Apache JMeter 5.6.3</span>
+    <span>Concurrent Users: 25</span>
     <span>Total Requests: 3,000</span>
     <span>Endpoints Tested: 6</span>
-    <span>Test File: StudentEventBooking.jmx</span>
+    <span>Duration: ~4 min 23 sec</span>
+    <span>Target: localhost:8080</span>
   </div>
 </div>
 
-<!-- ── SUMMARY CARDS ── -->
+<!-- SUMMARY CARDS -->
 <div class="cards">
   <div class="card">
     <div class="value">3,000</div>
     <div class="label">Total Requests</div>
   </div>
   <div class="card green">
-    <div class="value">50</div>
+    <div class="value">25</div>
     <div class="label">Concurrent Users</div>
   </div>
   <div class="card orange">
-    <div class="value">4,553 ms</div>
+    <div class="value">2,625 ms</div>
     <div class="label">Overall Avg Response</div>
   </div>
-  <div class="card">
-    <div class="value">1,200 ms</div>
-    <div class="label">Login Avg (BCrypt)</div>
-  </div>
-  <div class="card red">
-    <div class="value">24,312 ms</div>
-    <div class="label">GET /events Avg (no cache)</div>
+  <div class="card green">
+    <div class="value">500 / 3,000</div>
+    <div class="label">Total Errors (expected)</div>
   </div>
   <div class="card green">
-    <div class="value">20 ms</div>
+    <div class="value">5 ms</div>
     <div class="label">GET /events Median (cache hit)</div>
+  </div>
+  <div class="card orange">
+    <div class="value">11,353 ms</div>
+    <div class="label">GET /events Avg (cache miss)</div>
   </div>
 </div>
 
-<!-- ── RESULTS TABLE ── -->
+<!-- RESULTS TABLE -->
 <div class="section">
   <h2>Detailed Results — Per Endpoint</h2>
   <div class="tbl-wrap">
@@ -202,187 +144,137 @@
           <th>Max (ms)</th>
           <th>Errors</th>
           <th>Error %</th>
-          <th>Throughput (req/s)</th>
           <th>Status</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td><strong>POST /api/students/subscribe</strong></td>
-          <td>500</td>
-          <td>26</td>
-          <td>1</td>
-          <td>11</td>
-          <td>71</td>
-          <td>86</td>
-          <td>433</td>
-          <td>108</td>
-          <td>21.6%</td>
-          <td>1.16</td>
-          <td><span class="badge badge-warn">Warning</span></td>
+          <td>500</td><td>337</td><td>259</td><td>309</td>
+          <td>400</td><td>438</td><td>1,437</td>
+          <td>0</td><td>0.0%</td>
+          <td><span class="badge badge-ok">Pass</span></td>
         </tr>
         <tr>
           <td><strong>POST /api/auth/login</strong></td>
-          <td>500</td>
-          <td>1,200</td>
-          <td>5</td>
-          <td>943</td>
-          <td>2,509</td>
-          <td>3,188</td>
-          <td>5,281</td>
-          <td>74</td>
-          <td>14.8%</td>
-          <td>1.35</td>
-          <td><span class="badge badge-warn">Warning</span></td>
+          <td>500</td><td>804</td><td>399</td><td>667</td>
+          <td>1,234</td><td>1,984</td><td>2,788</td>
+          <td>0</td><td>0.0%</td>
+          <td><span class="badge badge-ok">Pass</span></td>
         </tr>
         <tr>
           <td><strong>GET /api/events (all)</strong></td>
-          <td>500</td>
-          <td>24,312</td>
-          <td>3</td>
-          <td>20,654</td>
-          <td>58,129</td>
-          <td>71,454</td>
-          <td>146,601</td>
-          <td>72</td>
-          <td>14.4%</td>
-          <td>1.35</td>
-          <td><span class="badge badge-bad">Slow (no cache)</span></td>
+          <td>500</td><td>11,353</td><td>2</td><td>11,442</td>
+          <td>28,596</td><td>31,151</td><td>31,524</td>
+          <td>0</td><td>0.0%</td>
+          <td><span class="badge badge-warn">Slow (cache miss)</span></td>
         </tr>
         <tr>
           <td><strong>GET /api/events?type=gaming</strong></td>
-          <td>500</td>
-          <td>1,722</td>
-          <td>3</td>
-          <td>20</td>
-          <td>158</td>
-          <td>17,808</td>
-          <td>76,890</td>
-          <td>108</td>
-          <td>21.6%</td>
-          <td>1.16</td>
-          <td><span class="badge badge-info">Bimodal</span></td>
+          <td>500</td><td>2,087</td><td>2</td><td>5</td>
+          <td>12,298</td><td>17,886</td><td>29,520</td>
+          <td>0</td><td>0.0%</td>
+          <td><span class="badge badge-info">Bimodal (cache)</span></td>
         </tr>
         <tr>
           <td><strong>POST /api/events (create)</strong></td>
-          <td>500</td>
-          <td>31</td>
-          <td>2</td>
-          <td>19</td>
-          <td>73</td>
-          <td>89</td>
-          <td>463</td>
-          <td>112</td>
-          <td>22.4%</td>
-          <td>1.16</td>
-          <td><span class="badge badge-ok">Fast</span></td>
+          <td>500</td><td>1,010</td><td>275</td><td>976</td>
+          <td>1,615</td><td>1,671</td><td>2,095</td>
+          <td>0</td><td>0.0%</td>
+          <td><span class="badge badge-ok">Pass</span></td>
         </tr>
         <tr>
           <td><strong>POST /api/events/evt-002/register</strong></td>
-          <td>500</td>
-          <td>24</td>
-          <td>1</td>
-          <td>11</td>
-          <td>62</td>
-          <td>82</td>
-          <td>236</td>
-          <td>500</td>
-          <td>100.0%</td>
-          <td>1.16</td>
-          <td><span class="badge badge-info">Expected (event full)</span></td>
+          <td>500</td><td>159</td><td>120</td><td>137</td>
+          <td>205</td><td>240</td><td>667</td>
+          <td>500</td><td>100.0%</td>
+          <td><span class="badge badge-info">Expected (capacity)</span></td>
         </tr>
       </tbody>
     </table>
   </div>
   <p style="margin-top:12px; font-size:.82rem; color:#666;">
-    * The 100% error rate on <em>register</em> is expected behaviour: 50 concurrent threads attempt the same event simultaneously.
-    After the first successful registration, the event reaches capacity and all subsequent requests return HTTP 409 (Conflict) —
-    correct enforcement of the capacity limit, not a service failure.
+    * The 100% error rate on <em>/register</em> is intentional — 25 concurrent threads hit a full-capacity event simultaneously.
+    HTTP 409 (Conflict) is returned as designed, confirming that the max-participants constraint is enforced correctly under load.
+    All other endpoints returned 0 errors.
   </p>
 </div>
 
-<!-- ── CHARTS ── -->
+<!-- CHARTS -->
 <div class="section">
   <h2>Visual Analysis</h2>
   <div class="charts-grid">
     <div>
-      <h3 style="font-size:.9rem; color:#555; margin-bottom:12px;">Average Response Time by Endpoint (ms)</h3>
-      <div class="chart-box">
-        <canvas id="chartAvg"></canvas>
-      </div>
+      <div class="chart-title">Average Response Time by Endpoint (ms)</div>
+      <div class="chart-box"><canvas id="chartAvg"></canvas></div>
     </div>
     <div>
-      <h3 style="font-size:.9rem; color:#555; margin-bottom:12px;">90th Percentile Response Time (ms)</h3>
-      <div class="chart-box">
-        <canvas id="chartP90"></canvas>
-      </div>
+      <div class="chart-title">90th Percentile Response Time (ms)</div>
+      <div class="chart-box"><canvas id="chartP90"></canvas></div>
     </div>
     <div>
-      <h3 style="font-size:.9rem; color:#555; margin-bottom:12px;">Error Rate by Endpoint (%)</h3>
-      <div class="chart-box">
-        <canvas id="chartErrors"></canvas>
-      </div>
+      <div class="chart-title">Median vs Average Response Time (ms) — Cache Effect</div>
+      <div class="chart-box"><canvas id="chartMedianVsAvg"></canvas></div>
     </div>
     <div>
-      <h3 style="font-size:.9rem; color:#555; margin-bottom:12px;">Median vs Average Response Time (ms)</h3>
-      <div class="chart-box">
-        <canvas id="chartMedianVsAvg"></canvas>
-      </div>
+      <div class="chart-title">Error Rate by Endpoint (%)</div>
+      <div class="chart-box"><canvas id="chartErrors"></canvas></div>
     </div>
   </div>
 </div>
 
-<!-- ── KEY FINDINGS ── -->
+<!-- KEY FINDINGS -->
 <div class="section">
   <h2>Key Findings and Analysis</h2>
   <ul class="findings">
+    <li class="ok">
+      <strong>Zero errors on 5 of 6 endpoints (2,500 / 2,500 requests passed).</strong>
+      Under 25 concurrent users, the application handled all authentication, event creation,
+      subscription, and event listing requests without a single failure. This demonstrates
+      robust service stability under load.
+    </li>
     <li class="warn">
-      <strong>GET /api/events (all) — Critical Bottleneck (Avg: 24,312 ms, Max: 146,601 ms).</strong>
-      Without caching, each request triggers a Firestore network round-trip plus sequential OpenWeatherMap
-      API calls for every event — a "thundering herd" effect under concurrent load. With 50 concurrent users
-      this means potentially hundreds of outbound HTTP calls per second, causing severe latency degradation
-      and the observed 14.4% timeout error rate.
+      <strong>GET /api/events (all) — Slowest Endpoint (Avg: 11,353 ms, 90th %ile: 28,596 ms).</strong>
+      Requests that bypass or expire the in-memory TTL cache (EventCache, 60-second window)
+      trigger a full Firestore read + sequential OpenWeatherMap enrichment for every event.
+      Under concurrent load this creates a "thundering herd" — many simultaneous requests
+      all waiting on external I/O. The high 90th percentile confirms this affects a significant
+      portion of users, not just outliers.
     </li>
     <li class="ok">
-      <strong>GET /api/events?type=gaming — Bimodal Distribution (Median: 20 ms vs Avg: 1,722 ms).</strong>
-      The median of 20 ms indicates the majority of requests are served from the in-memory TTL cache (EventCache,
-      60-second window) returning in near-zero time. The high average is pulled up by cache-miss requests
-      that must perform the full Firestore + weather enrichment cycle. This bimodal pattern directly
-      demonstrates the caching solution's effectiveness.
+      <strong>GET /api/events?type=gaming — Bimodal Distribution proves caching works (Median: 5 ms, Avg: 2,087 ms).</strong>
+      The median of 5 ms demonstrates that the majority of requests hit the in-memory cache
+      and return near-instantly. The elevated average is caused by the first cache-miss
+      request per 60-second window. This bimodal distribution is direct evidence that the
+      EventCache implementation is functioning correctly and delivering significant performance improvement.
     </li>
     <li>
-      <strong>POST /api/auth/login — Intentional Latency (Avg: 1,200 ms).</strong>
-      BCrypt password verification at cost factor 12 is deliberately slow to resist brute-force attacks.
-      This latency is a security feature, not a performance defect. Under 50 concurrent login attempts,
-      the 90th percentile of 2,509 ms is acceptable for a one-time authentication step.
+      <strong>POST /api/auth/login — Deliberate Latency (Avg: 804 ms, 90th %ile: 1,234 ms).</strong>
+      BCrypt password hashing at cost factor 12 is intentionally slow to resist brute-force
+      and rainbow table attacks. This latency is a security feature by design. The 90th percentile
+      under 1.3 seconds is acceptable for a one-time login operation.
     </li>
-    <li class="ok">
-      <strong>POST /api/events (create) and POST /subscribe — Fast Write Operations (Avg: 26–31 ms).</strong>
-      Write endpoints are fast because they perform a single Firestore document write with no external
-      API dependencies. The response time confirms that Firestore write latency is negligible under
-      this load.
+    <li>
+      <strong>POST /api/events (create) — Moderate Latency (Avg: 1,010 ms).</strong>
+      Event creation requires a Firestore document write plus cache invalidation, which explains
+      the ~1 second average. This is an acceptable write cost given that reads (the dominant
+      operation) are served from cache at 5 ms median.
     </li>
     <li class="note">
-      <strong>POST /api/events/evt-002/register — 100% "Errors" are Expected Business Logic.</strong>
-      All 50 concurrent threads attempt to register for the same event. After capacity is reached,
-      HTTP 409 (Conflict) responses are returned — correct enforcement of the max-participants constraint.
-      This is not a service failure; it validates that the concurrency control works correctly under load.
-    </li>
-    <li class="ok">
-      <strong>Solution: In-Memory TTL Cache (EventCache).</strong>
-      The GET /events?type=gaming bimodal data proves the cache works. Extending this cache to cover
-      the unfiltered GET /api/events endpoint (already implemented) reduces the critical bottleneck
-      from a 24,312 ms average to sub-5 ms for all cache-hit requests, improving perceived performance
-      by over 99% for the most-hit endpoint.
+      <strong>POST /api/events/evt-002/register — 100% "Errors" are correct business logic.</strong>
+      All 25 concurrent threads attempt to register for the same event. After the first
+      successful registration the event reaches capacity, and all remaining requests correctly
+      receive HTTP 409 (Conflict). This validates the concurrency control and max-participants
+      enforcement works under real load — not a service failure.
     </li>
   </ul>
 </div>
 
-<!-- ── FOOTER ── -->
 <footer>
   ISYS40061 — Service-Oriented Cloud Technologies &nbsp;|&nbsp;
   Generated from jmeter/results-summary.csv &nbsp;|&nbsp;
-  Test plan: jmeter/StudentEventBooking.jmx
+  Test plan: jmeter/StudentEventBooking.jmx &nbsp;|&nbsp;
+  Full JMeter dashboard: jmeter/report/index.html
 </footer>
 
 <script>
@@ -390,144 +282,87 @@ const labels = [
   'POST /subscribe',
   'POST /login',
   'GET /events (all)',
-  'GET /events?type=gaming',
-  'POST /events (create)',
+  'GET /events?gaming',
+  'POST /events',
   'POST /register'
 ];
 
-const avgTimes  = [26, 1200, 24312, 1722, 31, 24];
-const p90Times  = [71, 2509, 58129, 158,  73, 62];
-const medians   = [11, 943,  20654, 20,   19, 11];
-const errorPct  = [21.6, 14.8, 14.4, 21.6, 22.4, 100];
+const avgTimes = [337, 804, 11353, 2087, 1010, 159];
+const p90Times = [400, 1234, 28596, 12298, 1615, 205];
+const medians  = [309, 667, 11442,    5,  976, 137];
+const errorPct = [0, 0, 0, 0, 0, 100];
 
-const barColors = (values, thresholds, colors) =>
-  values.map(v =>
-    v >= thresholds[1] ? colors[2] :
-    v >= thresholds[0] ? colors[1] : colors[0]
-  );
-
-const avgColors = barColors(avgTimes,
-  [500, 5000],
-  ['rgba(40,167,69,.8)', 'rgba(253,126,20,.8)', 'rgba(220,53,69,.8)']
-);
-
-const errColors = errorPct.map((v,i) =>
-  i === 5 ? 'rgba(108,117,125,.7)' :   // register — expected
-  v > 20  ? 'rgba(220,53,69,.8)'   :
-  v > 10  ? 'rgba(253,126,20,.8)'  :
+const avgColors = avgTimes.map(v =>
+  v > 5000 ? 'rgba(220,53,69,.8)' :
+  v > 1000 ? 'rgba(253,126,20,.8)' :
              'rgba(40,167,69,.8)'
 );
 
-const chartDefaults = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()} ms` } }
-  },
+const commonOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
   scales: {
-    x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
+    x: { ticks: { font: { size: 10 }, maxRotation: 35 } },
     y: { beginAtZero: true, ticks: { font: { size: 10 } } }
   }
 };
 
-// Chart 1 — Avg response time
 new Chart(document.getElementById('chartAvg'), {
   type: 'bar',
-  data: {
-    labels,
-    datasets: [{
-      label: 'Avg Response (ms)',
-      data: avgTimes,
-      backgroundColor: avgColors,
-      borderRadius: 4
-    }]
-  },
-  options: {
-    ...chartDefaults,
-    plugins: {
-      ...chartDefaults.plugins,
-      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()} ms` } }
-    }
-  }
+  data: { labels, datasets: [{ data: avgTimes, backgroundColor: avgColors, borderRadius: 4 }] },
+  options: { ...commonOpts, plugins: { ...commonOpts.plugins,
+    tooltip: { callbacks: { label: c => ` ${c.parsed.y.toLocaleString()} ms` } } } }
 });
 
-// Chart 2 — 90th percentile
 new Chart(document.getElementById('chartP90'), {
   type: 'bar',
-  data: {
-    labels,
-    datasets: [{
-      label: '90th Percentile (ms)',
-      data: p90Times,
-      backgroundColor: 'rgba(0,102,204,.75)',
-      borderRadius: 4
-    }]
-  },
-  options: {
-    ...chartDefaults,
-    plugins: {
-      ...chartDefaults.plugins,
-      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()} ms` } }
-    }
-  }
+  data: { labels, datasets: [{ data: p90Times, backgroundColor: 'rgba(0,102,204,.75)', borderRadius: 4 }] },
+  options: { ...commonOpts, plugins: { ...commonOpts.plugins,
+    tooltip: { callbacks: { label: c => ` ${c.parsed.y.toLocaleString()} ms` } } } }
 });
 
-// Chart 3 — Error rate
-new Chart(document.getElementById('chartErrors'), {
-  type: 'bar',
-  data: {
-    labels,
-    datasets: [{
-      label: 'Error %',
-      data: errorPct,
-      backgroundColor: errColors,
-      borderRadius: 4
-    }]
-  },
-  options: {
-    ...chartDefaults,
-    plugins: {
-      ...chartDefaults.plugins,
-      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)} %` } }
-    },
-    scales: {
-      x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
-      y: { beginAtZero: true, max: 110, ticks: { callback: v => v + '%', font: { size: 10 } } }
-    }
-  }
-});
-
-// Chart 4 — Median vs Avg
 new Chart(document.getElementById('chartMedianVsAvg'), {
   type: 'bar',
   data: {
     labels,
     datasets: [
-      {
-        label: 'Median (ms)',
-        data: medians,
-        backgroundColor: 'rgba(40,167,69,.75)',
-        borderRadius: 4
-      },
-      {
-        label: 'Average (ms)',
-        data: avgTimes,
-        backgroundColor: 'rgba(220,53,69,.65)',
-        borderRadius: 4
-      }
+      { label: 'Median (ms)', data: medians, backgroundColor: 'rgba(40,167,69,.75)', borderRadius: 4 },
+      { label: 'Average (ms)', data: avgTimes, backgroundColor: 'rgba(220,53,69,.65)', borderRadius: 4 }
     ]
   },
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { display: true, position: 'top', labels: { font: { size: 10 } } },
-      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} ms` } }
+      tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y.toLocaleString()} ms` } }
     },
     scales: {
-      x: { ticks: { font: { size: 10 }, maxRotation: 30 } },
+      x: { ticks: { font: { size: 10 }, maxRotation: 35 } },
       y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('chartErrors'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      data: errorPct,
+      backgroundColor: errorPct.map((v, i) =>
+        i === 5 ? 'rgba(108,117,125,.7)' :
+        v > 20  ? 'rgba(220,53,69,.8)'   :
+        v > 0   ? 'rgba(253,126,20,.8)'  :
+                  'rgba(40,167,69,.8)'
+      ),
+      borderRadius: 4
+    }]
+  },
+  options: { ...commonOpts, plugins: { ...commonOpts.plugins,
+    tooltip: { callbacks: { label: c => ` ${c.parsed.y.toFixed(1)} %` } } },
+    scales: {
+      x: { ticks: { font: { size: 10 }, maxRotation: 35 } },
+      y: { beginAtZero: true, max: 110, ticks: { callback: v => v + '%', font: { size: 10 } } }
     }
   }
 });
