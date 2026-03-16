@@ -768,12 +768,31 @@ public class FirebaseService {
     }
 
     /**
-     * Deletes a student account from the system by studentId.
+     * Deletes a student account from both Firestore and Firebase Authentication.
+     * Looks up the student's email first to find their Auth UID, then deletes both.
      */
     public void deleteStudent(String studentId) {
         if (firebaseAvailable) {
             try {
+                // Step 1: get email before deleting Firestore doc
+                DocumentSnapshot doc = db.collection("students").document(studentId).get().get();
+                String email = doc.exists() ? doc.getString("email") : null;
+
+                // Step 2: delete from Firestore
                 db.collection("students").document(studentId).delete().get();
+
+                // Step 3: delete from Firebase Authentication (so they disappear from Auth console)
+                if (email != null) {
+                    try {
+                        com.google.firebase.auth.UserRecord authUser =
+                                FirebaseAuth.getInstance().getUserByEmail(email);
+                        FirebaseAuth.getInstance().deleteUser(authUser.getUid());
+                        System.out.println("[FirebaseService] Auth user deleted: " + email);
+                    } catch (Exception authEx) {
+                        // User may not exist in Auth (registered before Auth was added) — safe to ignore
+                        System.out.println("[FirebaseService] Auth delete skipped for " + email + ": " + authEx.getMessage());
+                    }
+                }
             } catch (InterruptedException | ExecutionException e) {
                 System.out.println("[FirebaseService] deleteStudent error: " + e.getMessage());
             }
