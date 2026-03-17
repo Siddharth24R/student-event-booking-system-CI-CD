@@ -35,7 +35,7 @@ A full-stack Java EE REST API + single-page web app that lets students discover,
 | Event time display | Shows formatted time or "TBD" for external events with no fixed time |
 | Star ratings | Students rate attended events; live average shown |
 | Admin panel | Analytics dashboard, student management, force sync |
-| Admin user management | Delete individual students or bulk-delete multiple students |
+| Admin user management | Delete individual/bulk students — removes from Firestore **and** Firebase Authentication |
 | Admin login guard | Admin login form rejects non-admin accounts at both client + server |
 | API resilience | Skiddle, Ticketmaster, and OpenWeatherMap failures are isolated — existing data always served |
 | In-memory cache | 60-second TTL cache on `GET /api/events` with write-through invalidation |
@@ -50,15 +50,18 @@ A full-stack Java EE REST API + single-page web app that lets students discover,
 ```
 StudentEventBooking/
 ├── Dockerfile
+├── Jenkinsfile                        # Jenkins CI/CD pipeline
 ├── run.ps1                            # One-click Docker launch
 ├── pom.xml
 ├── firebase.json                      # Firebase deployment config
 ├── firestore.indexes.json             # Custom Firestore indexes
 ├── firestore.rules                    # Firestore security rules
-├── .firebaserc                        # Firebase project config
+├── ISYS40061_FinalReport.docx         # Coursework report
 ├── jmeter/
 │   ├── StudentEventBooking.jmx        # JMeter performance test plan
-│   └── results-summary.csv           # JMeter load test results (50 concurrent users)
+│   ├── results-summary.csv            # Load test results (25 concurrent users, 3,000 requests)
+│   ├── jmeter-report.html             # Custom HTML performance report with charts
+│   └── report/index.html              # Auto-generated JMeter dashboard
 └── src/main/
     ├── java/com/ntu/eventbooking/
     │   ├── ApplicationConfig.java     # Jersey application configuration
@@ -513,7 +516,7 @@ No authentication required.
 
 **CORS:** `CorsFilter` allows all origins (`*`) so the SPA can be served from any host during development.
 
-**Performance testing:** A JMeter test plan (`jmeter/StudentEventBooking.jmx`) covers all major endpoints. `jmeter/results-summary.csv` contains the results from a 50-concurrent-user load test covering login, event listing, registration, cancellation, and rating.
+**Performance testing:** A JMeter test plan (`jmeter/StudentEventBooking.jmx`) covers all major endpoints. `jmeter/results-summary.csv` contains results from a 25-concurrent-user load test (3,000 requests across 6 endpoints). A visual HTML report with charts is at `jmeter/jmeter-report.html` and the full JMeter dashboard at `jmeter/report/index.html`. Key finding: cached event list median = **5 ms** vs uncached average = **11,353 ms**, demonstrating the TTL cache effectiveness.
 
 ---
 
