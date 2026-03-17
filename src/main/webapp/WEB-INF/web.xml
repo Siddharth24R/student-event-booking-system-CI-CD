@@ -7,11 +7,6 @@
 
     <display-name>Student Event Booking API</display-name>
 
-    <!-- Starts EventSyncScheduler on deploy; shuts it down on undeploy -->
-    <listener>
-        <listener-class>com.ntu.eventbooking.startup.AppStartupListener</listener-class>
-    </listener>
-
     <!--
         Jersey 2.x servlet (org.glassfish.jersey) — NOT the Jersey 1.x class
         (com.sun.jersey). Using the wrong class causes ClassNotFoundException on startup.

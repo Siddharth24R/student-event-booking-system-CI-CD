@@ -220,7 +220,7 @@ public class SkiddleService {
             case "sport": return "sport";
             case "live":  return "concert";
             case "club":  return "social";
-            case "gam":   return "gaming";
+            case "game":  return "gaming";
             default:      return "other";
         }
     }
