@@ -566,3 +566,11 @@ Post-pipeline: prints success/failure message and cleans the workspace.
 - Docker available on the Jenkins agent
 - `.env` file present on the agent with API keys
 # CI/CD pipeline active
+
+---
+
+## Contributors
+
+| Name | GitHub | Role |
+|---|---|---|
+| Siddharth | [@Siddharth24R](https://github.com/Siddharth24R) | Developer |
